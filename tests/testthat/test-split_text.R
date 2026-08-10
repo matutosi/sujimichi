@@ -18,6 +18,17 @@ test_that("a text without a terminator is one sentence", {
 
 test_that("an ASCII period between digits is not a terminator", {
   expect_equal(split_sentences("平均は0.5である．"), "平均は0.5である．")
+  # 語の中のピリオドは区切りにしない
+  expect_equal(split_sentences("ui.R と server.R がある．"),
+               "ui.R と server.R がある．")
+  expect_equal(split_sentences("経緯は.claude/done.md にある．"),
+               "経緯は.claude/done.md にある．")
+  expect_equal(split_sentences("幅は stringi::stri_width() で測る．"),
+               "幅は stringi::stri_width() で測る．")
+  # 文末・空白の前・閉じ括弧の前では区切る
+  expect_equal(split_sentences("a test. next one."),
+               c("a test.", "next one."))
+  expect_equal(split_sentences("(a test.)次．"), c("(a test.)", "次．"))
   expect_equal(
     split_sentences("値は1.5だ．次は2.25だ．"),
     c("値は1.5だ．", "次は2.25だ．"))

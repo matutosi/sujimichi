@@ -14,6 +14,22 @@ sentence_marks <- function(){
   c("\u3002", "\uff0e", ".")
 }
 
+#' Closing brackets and quotation marks
+#'
+#' Internal function.  The characters that may follow a sentence
+#' terminator and still belong to the same sentence: 」』〉》）］”’ and
+#' the ASCII ones.  Written as code points to keep this file ASCII.
+#' The ASCII "]" comes back escaped, so that the string can be dropped
+#' straight into a character class.
+#'
+#' @return A string.
+#' @keywords internal
+closing_marks <- function(){
+  paste0(intToUtf8(c(0x300d, 0x300f, 0x3009, 0x300b,
+                     0xff09, 0xff3d, 0x201d, 0x2019)),
+         ")\\]\"'")
+}
+
 #' A short sample text
 #'
 #' Three sentences used in the examples and in the README.
@@ -44,9 +60,11 @@ sample_text <- function(){
 #' at a phrase boundary.  A space is kept only where an ASCII word would
 #' otherwise be glued to the next one.
 #'
-#' An ASCII full stop between digits is not a terminator, so that "0.5"
-#' stays in one piece.  A terminator followed by a closing bracket or
-#' quotation mark keeps the bracket in the same sentence.
+#' An ASCII full stop ends a sentence only at the end of a paragraph, or
+#' before a space or a closing bracket.  A full stop inside a word is
+#' part of it, so that "0.5", "ui.R" and ".claude/done.md" stay in one
+#' piece.  A terminator followed by a closing bracket or quotation mark
+#' keeps the bracket in the same sentence.
 #'
 #' @param text A character vector.  Elements are treated as lines and are
 #'   pasted together with a line break.
@@ -98,8 +116,10 @@ split_sentences <- function(text, sep = sentence_marks()){
     text <- gsub(paste0("(", cls, ")"), paste0("\\1", mark), text, perl = TRUE)
   }
   if(any(dot)){
-    # not a terminator between digits, so that "0.5" stays in one piece
-    text <- gsub("(?<![0-9])\\.(?![0-9])", paste0(".", mark), text, perl = TRUE)
+    # a terminator only at the end, or before a space or a closing
+    # bracket, so that "0.5", "ui.R" and ".claude/done.md" stay whole
+    text <- gsub(paste0("\\.(?=[[:blank:]]|$|[", closing_marks(), "])"),
+                 paste0(".", mark), text, perl = TRUE)
   }
   text      <- move_mark_after_close(text, mark)
   sentences <- trimws(strsplit(text, mark, fixed = TRUE)[[1]])
@@ -127,7 +147,7 @@ join_lines <- function(text){
 move_mark_after_close <- function(text, mark){
   # closing brackets and quotation marks: 」』〉》）］”’ and ASCII ones.
   # the ASCII "]" is escaped, or it would close the class.
-  close   <- "\u300d\u300f\u3009\u300b\uff09\uff3d\u201d\u2019)\\]\"'"
+  close   <- closing_marks()
   pattern <- paste0(mark, "([", close, "])")
   repeat{
     moved <- gsub(pattern, paste0("\\1", mark), text, perl = TRUE)
