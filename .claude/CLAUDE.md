@@ -29,6 +29,10 @@
 
 (2026-08-11 更新)
 
+- **pkgdown のサイトを GitHub Actions で自動デプロイするようにした**．
+  `.github/workflows/pkgdown.yaml` を追加し，`main` への push で
+  `gh-pages` に配信される．実行が成功し，
+  <https://matutosi.github.io/sujimichi/> が公開されていることを確認した．
 - パッケージの骨組み(DESCRIPTION・LICENSE(MIT)・`R/`・`tests/testthat/`・
   `sujimichi.Rproj`)．構想は [design.md](design.md)．
 - **段階1の手順1(文の分割)・手順2(内容語の取り出し)・
@@ -195,9 +199,11 @@ broken_paragraphs(dead)
 
 ### TODO / 今後の候補
 
-- (未着手) `usethis::use_pkgdown_github_pages()` で GitHub Actions の
-  デプロイ設定を足す(push 済みなので着手できる)
 - (未着手) 表示方法の決定([design.md](design.md) の「提案(未決)」)
 - (未着手) 段階3のラベル付けの手段の決定(同上)
+- (未着手) 語の正規化を強めるかの検討．moranajp(ipadic)では
+  「つながり」が名詞・一般のまま原形も「つながり」で，design.md の例が
+  期待する「つながり／つながる」の統合が起きない．
+  手順3のつながりの拾い方に効くので，段階2に進む前に方針を決める．
 - (未確認) `strip_markdown()` のリンク・強調の扱い
   (実データで困ったら対応を検討)
