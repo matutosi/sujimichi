@@ -157,6 +157,11 @@ has_word_char <- function(word){
 #' morpheme of its own.  The numbering is checked afterwards, and a
 #' message is shown when it still does not match.
 #'
+#' The sentences are handed over in chunks of at most `max_bytes` bytes,
+#' because MeCab reads a line into a buffer of a fixed size and splits
+#' the line when it does not fit, in the middle of a character.  See
+#' [sentence_chunks()].
+#'
 #' MeCab on Windows reads its settings from the path it was built with,
 #' and stops when the file is not there.  `analyze_morphemes()` therefore
 #' looks for `mecabrc` next to `bin_dir` and points the `MECABRC`
@@ -174,6 +179,8 @@ has_word_char <- function(word){
 #' @param mecabrc A string.  Path of the `mecabrc` settings file.
 #'   `NULL` (the default) looks for it next to `bin_dir`.
 #'   `""` leaves the setting alone.
+#' @param max_bytes An integer.  Largest number of bytes handed to the
+#'   analyser at once.  Lower it when the analyser reports an overflow.
 #' @param ... Passed to [moranajp::moranajp_all()].
 #' @return A tibble of morphemes with a `sentence_id` column,
 #'   or `NULL` when the analysis could not be run.
@@ -187,7 +194,7 @@ has_word_char <- function(word){
 #' @export
 analyze_morphemes <- function(sentences, method = "mecab",
                               bin_dir = "", iconv = "",
-                              mecabrc = NULL, ...){
+                              mecabrc = NULL, max_bytes = 8000, ...){
   if(is.data.frame(sentences)){
     if(!"sentence" %in% colnames(sentences)){
       stop("`sentences` has no column `sentence`.", call. = FALSE)
@@ -211,13 +218,25 @@ analyze_morphemes <- function(sentences, method = "mecab",
   }
   # a space on each side keeps moranajp's "BP" marker a morpheme of its
   # own, so that the sentence boundaries survive the analysis
-  padded    <- paste0(" ", sentences, " ")
-  morphemes <- try(
-    moranajp::moranajp_all(tibble::tibble(text = padded),
-      text_col = "text", method = method,
-      bin_dir = bin_dir, iconv = iconv, ...),
-    silent = TRUE)
-  if(inherits(morphemes, "try-error") || is.null(morphemes)){
+  padded <- paste0(" ", sentences, " ")
+  chunk  <- sentence_chunks(padded, max_bytes = max_bytes)
+  parts  <- vector("list", max(c(chunk, 0L)))
+  done   <- 0L
+  failed <- FALSE
+  for(g in seq_along(parts)){
+    take <- chunk == g
+    part <- analyze_chunk(padded[take], method = method, bin_dir = bin_dir,
+                          iconv = iconv, ...)
+    if(is.null(part)){
+      failed <- TRUE
+      break
+    }
+    part[["sentence_id"]] <- part[["sentence_id"]] + done
+    done       <- done + sum(take)
+    parts[[g]] <- part
+  }
+  morphemes <- if(failed || !length(parts)) NULL else do.call(rbind, parts)
+  if(is.null(morphemes)){
     message("Morphological analysis by '", method, "' failed, ",
             "so NULL was returned.\n",
             "  Check that '", method, "' is installed and that ",
@@ -229,9 +248,65 @@ analyze_morphemes <- function(sentences, method = "mecab",
             "so NULL was returned.")
     return(invisible(NULL))
   }
-  colnames(morphemes)[colnames(morphemes) == "text_id"] <- "sentence_id"
   check_sentence_ids(morphemes, length(sentences))
   morphemes
+}
+
+#' Run the analyser over one chunk of sentences
+#'
+#' Internal function for [analyze_morphemes()].
+#' Returns `NULL` when the analysis could not be run, so that the caller
+#' can say so once instead of once per chunk.
+#'
+#' @inheritParams analyze_morphemes
+#' @return A data.frame of morphemes with a `sentence_id` column,
+#'   or `NULL`.
+#' @keywords internal
+analyze_chunk <- function(sentences, method, bin_dir, iconv, ...){
+  morphemes <- try(
+    moranajp::moranajp_all(tibble::tibble(text = sentences),
+      text_col = "text", method = method,
+      bin_dir = bin_dir, iconv = iconv, ...),
+    silent = TRUE)
+  if(inherits(morphemes, "try-error") || is.null(morphemes)) return(NULL)
+  if(!nrow(morphemes)) return(NULL)
+  colnames(morphemes)[colnames(morphemes) == "text_id"] <- "sentence_id"
+  morphemes
+}
+
+#' Group sentences into chunks the analyser can swallow
+#'
+#' Internal function for [analyze_morphemes()].
+#' MeCab reads one line at a time into a buffer of a fixed size, in
+#' bytes, and splits the line when it does not fit; the split falls in
+#' the middle of a character and the text after it is unusable.
+#' 'moranajp' joins the sentences into one line and groups them by the
+#' number of characters, which is not the same thing: a Japanese
+#' character takes three bytes in UTF-8, so a group well inside its
+#' character limit can still be far over the buffer.
+#'
+#' A sentence longer than `max_bytes` on its own is left in a chunk of
+#' its own rather than dropped.
+#'
+#' @param sentences A character vector.
+#' @param max_bytes An integer.  Largest chunk, counted in bytes.
+#' @return An integer vector, the chunk number of each sentence.
+#' @keywords internal
+sentence_chunks <- function(sentences, max_bytes = 8000){
+  # 2 for the "BP" marker moranajp puts between the sentences
+  size  <- nchar(sentences, type = "bytes") + 2L
+  chunk <- integer(length(sentences))
+  group <- 1L
+  used  <- 0L
+  for(i in seq_along(size)){
+    if(used > 0L && used + size[[i]] > max_bytes){
+      group <- group + 1L
+      used  <- 0L
+    }
+    chunk[[i]] <- group
+    used       <- used + size[[i]]
+  }
+  chunk
 }
 
 #' Warn when the sentence numbers do not match the sentences

@@ -10,6 +10,7 @@ analyze_morphemes(
   bin_dir = "",
   iconv = "",
   mecabrc = NULL,
+  max_bytes = 8000,
   ...
 )
 }
@@ -29,6 +30,9 @@ Leave it empty for a UTF-8 dictionary.}
 \item{mecabrc}{A string.  Path of the \code{mecabrc} settings file.
 \code{NULL} (the default) looks for it next to \code{bin_dir}.
 \code{""} leaves the setting alone.}
+
+\item{max_bytes}{An integer.  Largest number of bytes handed to the
+analyser at once.  Lower it when the analyser reports an overflow.}
 
 \item{...}{Passed to \code{\link[moranajp:moranajp_all]{moranajp::moranajp_all()}}.}
 }
@@ -55,6 +59,11 @@ is lost, and every sentence after it is numbered one too low.  Each
 sentence is therefore padded with a space, which keeps the marker a
 morpheme of its own.  The numbering is checked afterwards, and a
 message is shown when it still does not match.
+
+The sentences are handed over in chunks of at most \code{max_bytes} bytes,
+because MeCab reads a line into a buffer of a fixed size and splits
+the line when it does not fit, in the middle of a character.  See
+\code{\link[=sentence_chunks]{sentence_chunks()}}.
 
 MeCab on Windows reads its settings from the path it was built with,
 and stops when the file is not there.  \code{analyze_morphemes()} therefore

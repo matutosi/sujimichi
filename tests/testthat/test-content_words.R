@@ -43,6 +43,19 @@ test_that("a morpheme of symbols only is dropped", {
   expect_equal(pick_content_words(morphemes)$word, c("強調", "R", "4"))
 })
 
+test_that("sentence_chunks() groups by bytes, not by characters", {
+  # 日本語は1文字3バイトなので，文字数で数えると MeCab のバッファを超える
+  ja <- strrep("あ", 100)          # 300 バイト
+  expect_equal(sentence_chunks(rep(ja, 3), max_bytes = 700), c(1, 1, 2))
+  expect_equal(sentence_chunks(rep(ja, 3), max_bytes = 10000), c(1, 1, 1))
+})
+
+test_that("sentence_chunks() keeps a sentence that is too long on its own", {
+  long <- strrep("あ", 1000)
+  expect_equal(sentence_chunks(c("短い．", long, "短い．"), max_bytes = 100),
+               c(1, 2, 3))
+})
+
 test_that("check_sentence_ids() says so when the numbering is short", {
   # moranajp counts its "BP" markers; a swallowed marker merges two
   # sentences and shifts every sentence_id after it
