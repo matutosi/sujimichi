@@ -6,7 +6,7 @@
 各文を，共通の内容語をもつ先行文につなげて表示し，
 どの文ともつながらない文をデッドコードとして検出する．
 
-- リポジトリ: <https://github.com/matutosi/sujimichi> (作成済み．`origin` 登録済み．まだ push していない)
+- リポジトリ: <https://github.com/matutosi/sujimichi> (作成済み．`origin` 登録済み．push 済み)
 - 形態素解析は [moranajp](https://github.com/matutosi/moranajp) に任せる
   (ローカル実行．ネットワークに依存しない)
 - 構想と決定事項: [design.md](design.md)
@@ -27,16 +27,19 @@
 
 ### 現在の状態
 
-(2026-08-10 更新)
+(2026-08-11 更新)
 
 - パッケージの骨組み(DESCRIPTION・LICENSE(MIT)・`R/`・`tests/testthat/`・
   `sujimichi.Rproj`)．構想は [design.md](design.md)．
 - **段階1の手順1(文の分割)・手順2(内容語の取り出し)・
   手順3(つながりの計算)・手順4(コンソール表示)・
   手順5(デッドコード検出)を実装した**．これで段階1が最小構成で揃った．
-  テストは 119 件がすべて通る(118 PASS・moranajp が入っている環境では
+- **Markdown をプレーンテキストに変換する `strip_markdown()` を実装した**
+  (design.md の「未確認の論点」への対応．下記「実装した関数」参照)．
+- **`R CMD check` が手順4・5・`strip_markdown()` を含めて 0 errors /
+  0 warnings / 0 notes で通ることを確認した**．
+  テストは 131 件がすべて通る(130 PASS・moranajp が入っている環境では
   「無いときの穏当な失敗」テスト1件が意図通り skip になる)．
-  `R CMD check` は手順4・5を含めてはまだ通していない(下記 TODO)．
 - Imports は `stats`・`tibble` だけ．moranajp は **Suggests** に置き，
   `requireNamespace()` で確かめてから使う
   (GitHub 配布のパッケージなので Imports にはしない)．
@@ -89,6 +92,15 @@
 - `broken_paragraphs()` `dead_code()` の結果から，連結成分が2つ以上ある
   (話が繋がらない箇所で割れている)`paragraph_id` を挙げる
 - (内部) `find_components()` 段落ごとの union-find
+
+`R/markdown.R`
+
+- `strip_markdown()` Markdown をプレーンテキストに変換する
+  (`as_sentences()` の前段で使う想定)．見出し・箇条書き・引用の
+  記法は外して本文を残し，コードブロックは丸ごと除外する
+- (内部) `drop_code_blocks()` フェンス(` ``` `／`~~~`)で囲まれた
+  行を丸ごと落とす．`strip_markdown_line()` 1行分の記法を外す
+  (引用・見出し・箇条書きの行頭記号，インラインコードの `` ` ``)
 
 使い方は次のとおり(段落の情報が要るので `sentences` を渡す)．
 
@@ -172,16 +184,20 @@ broken_paragraphs(dead)
 - **`broken_paragraphs()` は段落単位**．成分が2つ以上の段落は，
   文どうしはどこかしらつながっていても，段落全体としては話が
   繋がらない箇所で割れている(design.md の「連結成分」の判定)．
+- **`strip_markdown()` は design.md の「暫定」方針どおり実装した**．
+  記法(見出しの `#`・箇条書きの `-`/`*`/`+`/番号・引用の `>`)だけを
+  外し，本文はそのまま解析対象に残す．コードブロック(フェンス)は
+  fence 行ごと丸ごと除外する．インラインコードの `` ` `` も外すことにした
+  (design.md には明記が無いが，バッククォートが残ると形態素解析を
+  邪魔するため，「記法だけ外す」の自然な延長として追加)．
+  リンク(`[text](url)`)・強調(`**`/`_`)は今回は対象にしていない
+  (design.md の論点に無く，実データで困ってから足す方針)．
 
 ### TODO / 今後の候補
 
-- (未着手) 手順4・5を含めて `R CMD check` を通す
-  (`stringi` を Imports に追加済みだが，まだ確認していない)
-- (未着手) Markdown をプレーンテキストに変換する関数
-  ([design.md](design.md) の「未確認の論点」)
-- (未着手) `matutosi/sujimichi` へ push する(リポジトリは `gh repo create`
-  で作成済み．`origin` にも登録済み)．push したら
-  `usethis::use_pkgdown_github_pages()` で GitHub Actions の
-  デプロイ設定を足す
+- (未着手) `usethis::use_pkgdown_github_pages()` で GitHub Actions の
+  デプロイ設定を足す(push 済みなので着手できる)
 - (未着手) 表示方法の決定([design.md](design.md) の「提案(未決)」)
 - (未着手) 段階3のラベル付けの手段の決定(同上)
+- (未確認) `strip_markdown()` のリンク・強調の扱い
+  (実データで困ったら対応を検討)
