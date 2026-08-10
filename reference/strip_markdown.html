@@ -65,7 +65,7 @@ end of a sentence.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">strip_markdown</span><span class="op">(</span><span class="va">text</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">strip_markdown</span><span class="op">(</span><span class="va">text</span>, list_end <span class="op">=</span> <span class="fu"><a href="sentence_marks.html">sentence_marks</a></span><span class="op">(</span><span class="op">)</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -74,6 +74,12 @@ end of a sentence.</p>
 
 <dl><dt id="arg-text">text<a class="anchor" aria-label="anchor" href="#arg-text"></a></dt>
 <dd><p>A character vector, one element per line.</p></dd>
+
+
+<dt id="arg-list-end">list_end<a class="anchor" aria-label="anchor" href="#arg-list-end"></a></dt>
+<dd><p>A string added to the end of a list item that does not
+end with a sentence terminator.  The fullwidth full stop (．) by
+default; <code>""</code> adds nothing.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -89,6 +95,13 @@ text is part of the prose while the address is not.  An image
 removed and the text between them is kept.  A lone <code>_</code> is left alone,
 because it is more often part of a name such as <code>sentence_id</code> than a
 mark of emphasis.</p>
+<p>A list item is a sentence of its own, but it rarely ends with a full
+stop.  <code><a href="as_sentences.html">split_sentences()</a></code> joins the lines of a paragraph, because a
+Japanese manuscript breaks a line in the middle of a sentence, so the
+items of a list would otherwise be run together into one long
+sentence.  A terminator is therefore added to an item that does not
+already end with one.  Pass <code>list_end = ""</code> to leave the items as
+they are.</p>
     </div>
 
     <div class="section level2">
@@ -96,9 +109,14 @@ mark of emphasis.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">strip_markdown</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"# 見出し"</span>, <span class="st">""</span>,</span></span>
 <span class="r-in"><span>                  <span class="st">"本文だ．"</span>, <span class="st">""</span>,</span></span>
 <span class="r-in"><span>                  <span class="st">"- 箇条書き1"</span>, <span class="st">"- 箇条書き2"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "見出し"    ""          "本文だ．"  ""          "箇条書き1" "箇条書き2"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "見出し"      ""            "本文だ．"    ""            "箇条書き1．"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6] "箇条書き2．"</span>
 <span class="r-in"><span><span class="fu">strip_markdown</span><span class="op">(</span><span class="st">"**強調**した[リンク](https://example.com)．"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "強調したリンク．"</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># a list item becomes a sentence of its own</span></span></span>
+<span class="r-in"><span><span class="fu">strip_markdown</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"- 箇条書き1"</span>, <span class="st">"- 箇条書き2"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "箇条書き1．" "箇条書き2．"</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

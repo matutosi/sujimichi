@@ -6,7 +6,7 @@ Internal function for
 ## Usage
 
 ``` r
-strip_markdown_line(line)
+strip_markdown_line(line, list_end = "")
 ```
 
 ## Arguments
@@ -14,6 +14,12 @@ strip_markdown_line(line)
 - line:
 
   A string.
+
+- list_end:
+
+  A string added to the end of a list item that does not end with a
+  sentence terminator. The fullwidth full stop (．) by default; `""`
+  adds nothing.
 
 ## Value
 
