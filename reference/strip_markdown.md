@@ -15,7 +15,11 @@ sentence.
 ## Usage
 
 ``` r
-strip_markdown(text, list_end = sentence_marks()[[2]])
+strip_markdown(
+  text,
+  end_mark = sentence_marks()[[2]],
+  heading = c("merge", "keep", "drop")
+)
 ```
 
 ## Arguments
@@ -24,11 +28,18 @@ strip_markdown(text, list_end = sentence_marks()[[2]])
 
   A character vector, one element per line.
 
-- list_end:
+- end_mark:
 
-  A string added to the end of a list item that does not end with a
-  sentence terminator. The fullwidth full stop (．) by default; `""`
-  adds nothing.
+  A string added to the end of a list item or a heading that does not
+  end with a sentence terminator. The fullwidth full stop (．) by
+  default; `""` adds nothing, and then a heading is kept as its own
+  paragraph whatever `heading` says, since joining it to the text below
+  would glue it to the first sentence.
+
+- heading:
+
+  One of `"merge"` (join a heading to the paragraph below it), `"keep"`
+  (leave it as its own paragraph) or `"drop"` (remove headings).
 
 ## Value
 
@@ -44,14 +55,22 @@ and the text between them is kept. A lone `_` is left alone, because it
 is more often part of a name such as `sentence_id` than a mark of
 emphasis.
 
-A list item is a sentence of its own, but it rarely ends with a full
-stop.
+A list item and a heading are each a sentence of their own, but neither
+usually ends with a full stop.
 [`split_sentences()`](https://matutosi.github.io/sujimichi/reference/as_sentences.md)
 joins the lines of a paragraph, because a Japanese manuscript breaks a
 line in the middle of a sentence, so the items of a list would otherwise
 be run together into one long sentence. A terminator is therefore added
-to an item that does not already end with one. Pass `list_end = ""` to
-leave the items as they are.
+to a line that does not already end with one. Pass `end_mark = ""` to
+leave the lines as they are.
+
+A heading is followed by a blank line, so it would stand as a paragraph
+of its own and share no word with anything. It is joined to the
+paragraph below it instead, where it reads as the sentence that the
+paragraph is about, and where a heading whose words do not come back in
+the text below shows up as dead code. Pass `heading = "keep"` to leave a
+heading as its own paragraph, or `heading = "drop"` to take headings out
+of the analysis.
 
 ## Examples
 
@@ -59,12 +78,15 @@ leave the items as they are.
 strip_markdown(c("# 見出し", "",
                   "本文だ．", "",
                   "- 箇条書き1", "- 箇条書き2"))
-#> [1] "見出し"      ""            "本文だ．"    ""            "箇条書き1．"
-#> [6] "箇条書き2．"
+#> [1] "見出し．"    "本文だ．"    ""            "箇条書き1．" "箇条書き2．"
 strip_markdown("**強調**した[リンク](https://example.com)．")
 #> [1] "強調したリンク．"
 
 # a list item becomes a sentence of its own
 strip_markdown(c("- 箇条書き1", "- 箇条書き2"))
 #> [1] "箇条書き1．" "箇条書き2．"
+
+# a heading joins the paragraph below it
+strip_markdown(c("# 目的", "", "この節では目的を述べる．"))
+#> [1] "目的．"                   "この節では目的を述べる．"
 ```
