@@ -47,13 +47,14 @@ console display sketched in <code>design.md</code>:</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">sujimichi_lines</span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span>, wrap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"("</span>, <span class="st">")"</span><span class="op">)</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">sujimichi_lines</span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span>, words <span class="op">=</span> <span class="cn">NULL</span>, wrap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"("</span>, <span class="st">")"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">format_sujimichi</span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span>, wrap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"("</span>, <span class="st">")"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">format_sujimichi</span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span>, words <span class="op">=</span> <span class="cn">NULL</span>, wrap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"("</span>, <span class="st">")"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">print_sujimichi</span><span class="op">(</span></span>
 <span>  <span class="va">links</span>,</span>
 <span>  <span class="va">sentences</span>,</span>
+<span>  words <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  wrap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"("</span>, <span class="st">")"</span><span class="op">)</span>,</span>
 <span>  color <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  file <span class="op">=</span> <span class="st">""</span></span>
@@ -71,6 +72,11 @@ console display sketched in <code>design.md</code>:</p>
 <dt id="arg-sentences">sentences<a class="anchor" aria-label="anchor" href="#arg-sentences"></a></dt>
 <dd><p>A data.frame with <code>sentence_id</code> and <code>sentence</code>,
 as returned by <code><a href="as_sentences.html">as_sentences()</a></code>.</p></dd>
+
+
+<dt id="arg-words">words<a class="anchor" aria-label="anchor" href="#arg-words"></a></dt>
+<dd><p>A data.frame as returned by <code><a href="content_words.html">content_words()</a></code>, or
+<code>NULL</code> (the default) to mark the shared word on its own.</p></dd>
 
 
 <dt id="arg-wrap">wrap<a class="anchor" aria-label="anchor" href="#arg-wrap"></a></dt>
@@ -116,6 +122,12 @@ points at, as in the example above.</p>
 sentence text.  When it is not found – for example a verb whose
 lemma differs from the form actually written – the sentence is
 shown as plain text, at the same indent as the sentence it links to.</p>
+<p>An analyser splits a compound word that is not in its dictionary:
+MeCab with ipadic reads 「畦畔」 as 「畦」 and 「畔」, and marking
+「(畦)畔」 reads oddly even though the link itself is sound.  Give
+<code>words</code> and the mark is widened over the nouns next to the shared
+one, so that the whole compound is marked.  Only the mark changes;
+the links were worked out in <code><a href="connect_sentences.html">connect_sentences()</a></code> and are untouched.</p>
     </div>
 
     <div class="section level2">

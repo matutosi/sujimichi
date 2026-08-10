@@ -8,13 +8,14 @@ display sketched in `design.md`:
 ## Usage
 
 ``` r
-sujimichi_lines(links, sentences, wrap = c("(", ")"))
+sujimichi_lines(links, sentences, words = NULL, wrap = c("(", ")"))
 
-format_sujimichi(links, sentences, wrap = c("(", ")"))
+format_sujimichi(links, sentences, words = NULL, wrap = c("(", ")"))
 
 print_sujimichi(
   links,
   sentences,
+  words = NULL,
   wrap = c("(", ")"),
   color = interactive(),
   file = ""
@@ -32,6 +33,12 @@ print_sujimichi(
 
   A data.frame with `sentence_id` and `sentence`, as returned by
   [`as_sentences()`](https://matutosi.github.io/sujimichi/reference/as_sentences.md).
+
+- words:
+
+  A data.frame as returned by
+  [`content_words()`](https://matutosi.github.io/sujimichi/reference/content_words.md),
+  or `NULL` (the default) to mark the shared word on its own.
 
 - wrap:
 
@@ -81,6 +88,14 @@ A word (a lemma) is looked for as a literal substring of the sentence
 text. When it is not found – for example a verb whose lemma differs from
 the form actually written – the sentence is shown as plain text, at the
 same indent as the sentence it links to.
+
+An analyser splits a compound word that is not in its dictionary: MeCab
+with ipadic reads 「畦畔」 as 「畦」 and 「畔」, and marking 「(畦)畔」
+reads oddly even though the link itself is sound. Give `words` and the
+mark is widened over the nouns next to the shared one, so that the whole
+compound is marked. Only the mark changes; the links were worked out in
+[`connect_sentences()`](https://matutosi.github.io/sujimichi/reference/connect_sentences.md)
+and are untouched.
 
 ## Examples
 
