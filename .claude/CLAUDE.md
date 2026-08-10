@@ -13,49 +13,29 @@
 
 将来は Python へ移植する(Streamlit)．名前は CRAN・PyPI とも空きを確認済み．
 
-## ディレクトリ構成
-
-```
-R/            パッケージのソース
-tests/        testthat (edition 3)
-DESCRIPTION   メタデータ
-NAMESPACE     roxygen2 が生成する(手で編集しない)
-_pkgdown.yml  pkgdown サイトの設定
-docs/         pkgdown が生成するサイト(git・R CMD check とも対象外)
-.claude/      プロジェクト管理(このファイル・design.md)
-```
-
 ## 作業上の注意
 
-- **NAMESPACE と man/ は roxygen2 が生成する**．
-  `devtools::document()` で更新し，手で編集しない．
 - **文字コード**: 日本語を含む R ファイルは **BOM なしの UTF-8** で保存する
   (textmining で BOM により `source()` が失敗した実例がある)．
 - **ネットワークに依存しない**．インターネット資源を使う処理を足すときは，
   穏当に失敗させる(`message()` して `NULL` を返す)．
   Examples でネットワークに触れない．
   これを守らなかったために moranajp は CRAN からアーカイブされた．
-- **README**: `README.Rmd` を編集し，`devtools::build_readme()` で
-  `README.md` を生成する(`README.md` を直接編集しない)．
 - **R のバージョン**: 開発は R 4.5.1．`Depends: R (>= 4.2.0)`．
-- **サイト**: `pkgdown::build_site()` で `docs/` にローカル生成できる．
-  GitHub Pages への自動デプロイ(GitHub Actions)は，
-  リポジトリ `matutosi/sujimichi` を作ってから設定する(まだ未着手)．
 
 ## 進捗状況
 
 ### 現在の状態
 
-(2026-08-11 更新)
+(2026-08-10 更新)
 
 - パッケージの骨組み(DESCRIPTION・LICENSE(MIT)・`R/`・`tests/testthat/`・
   `sujimichi.Rproj`)．構想は [design.md](design.md)．
 - **段階1の手順1(文の分割)・手順2(内容語の取り出し)・
-  手順3(つながりの計算)を実装した**．
-  `R CMD check` は 0 errors / 0 warnings / 1 NOTE
-  (NOTE は "unable to verify current time" のみで，中身とは無関係)．
-  テストは 80 件がすべて通る(moranajp が入っている環境では
+  手順3(つながりの計算)・手順4(コンソール表示)を実装した**．
+  テストは 96 件がすべて通る(moranajp が入っている環境では
   「無いときの穏当な失敗」テスト1件が意図通り skip になる)．
+  `R CMD check` は手順4を含めてはまだ通していない(下記 TODO)．
 - Imports は `stats`・`tibble` だけ．moranajp は **Suggests** に置き，
   `requireNamespace()` で確かめてから使う
   (GitHub 配布のパッケージなので Imports にはしない)．
@@ -91,12 +71,22 @@ docs/         pkgdown が生成するサイト(git・R CMD check とも対象外
 - (内部) `check_words()` `sentence_ids()` `link_rows()`
   `keep_first_links()` `add_lonely_rows()` `count_referred()`
 
+`R/console_view.R` (手順4)
+
+- `sujimichi_lines()` 文ごとに `indent / before / marked / after` を返す
+  (表示用の下ごしらえ．データを返す設計)
+- `format_sujimichi()` 上を1行の文字列(字下げ込み)にまとめる
+- `print_sujimichi()` 端末に出力する．既定で ANSI 色付け
+  (`color = interactive()`)
+- (内部) `ansi_cyan()`
+
 使い方は次のとおり(段落の情報が要るので `sentences` を渡す)．
 
 ```r
 sentences <- as_sentences(text)
 words     <- content_words(sentences, bin_dir = "d:/pf/mecab/bin")
 links     <- connect_sentences(words, sentences)
+print_sujimichi(links, sentences)
 ```
 
 #### 決めたこと(実装しながら)
@@ -145,14 +135,27 @@ links     <- connect_sentences(words, sentences)
   `docs/` を `.gitignore`・`.Rbuildignore` の両方に登録済み．
   `pkgdown::build_site()` でローカル生成できることを確認した．
   GitHub Actions での自動デプロイは，リポジトリを作ってから設定する．
+- **字下げは `stringi::stri_width()` で全角幅を測る**．ある文の字下げは，
+  1つ前につながる文の「語の手前までの幅 - 1」を，その前の文の字下げに
+  積み上げて決める(design.md の例の字下げに実測で一致することを確認)．
+  「-1」は語の印が前の語の最後の1桁に重なる，design.md の見た目に合わせた分．
+- **語(原形)は文の中の文字列として素朴に探す**(`regexpr(word, text,
+  fixed = TRUE)`)．動詞の原形が実際の表記と違う等で見つからないときは，
+  印を付けず，字下げも1つ前の文と同じ値にする(穏当に諦める)．
+  形態素ごとの文字位置は手順2の返り値に無いため，この単純な探索にした．
+- **色は既定で `interactive()` のときだけ付ける**．Examples や
+  `R CMD check` の実行時に ANSI エスケープが出力に混ざらないようにする．
+- **字下げ・印の計算はプレーンな文字列で行い，色付けは最後に重ねる**．
+  ANSI エスケープは表示幅を持たないので，色を付けても後続の文の
+  字下げがずれない．
 
 ### TODO / 今後の候補
 
 - (未着手) **段階1の残り**．
-  4. コンソール表示(インデント揃え + 色)．
-     `is_main` の行を使い，`stringi::stri_width()` で全角幅を計算する
   5. デッドコードの検出(孤立文 + 連結成分)．
      孤立文は `is.na(prev_id)` で取れる．連結成分は別途
+- (未着手) 手順4を含めて `R CMD check` を通す
+  (`stringi` を Imports に追加済みだが，まだ確認していない)
 - (未着手) Markdown をプレーンテキストに変換する関数
   ([design.md](design.md) の「未確認の論点」)
 - (未着手) `matutosi/sujimichi` へ push する(リポジトリは `gh repo create`
