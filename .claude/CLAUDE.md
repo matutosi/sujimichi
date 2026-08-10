@@ -32,10 +32,11 @@
 - パッケージの骨組み(DESCRIPTION・LICENSE(MIT)・`R/`・`tests/testthat/`・
   `sujimichi.Rproj`)．構想は [design.md](design.md)．
 - **段階1の手順1(文の分割)・手順2(内容語の取り出し)・
-  手順3(つながりの計算)・手順4(コンソール表示)を実装した**．
-  テストは 96 件がすべて通る(moranajp が入っている環境では
+  手順3(つながりの計算)・手順4(コンソール表示)・
+  手順5(デッドコード検出)を実装した**．これで段階1が最小構成で揃った．
+  テストは 119 件がすべて通る(118 PASS・moranajp が入っている環境では
   「無いときの穏当な失敗」テスト1件が意図通り skip になる)．
-  `R CMD check` は手順4を含めてはまだ通していない(下記 TODO)．
+  `R CMD check` は手順4・5を含めてはまだ通していない(下記 TODO)．
 - Imports は `stats`・`tibble` だけ．moranajp は **Suggests** に置き，
   `requireNamespace()` で確かめてから使う
   (GitHub 配布のパッケージなので Imports にはしない)．
@@ -80,6 +81,15 @@
   (`color = interactive()`)
 - (内部) `ansi_cyan()`
 
+`R/dead_code.R` (手順5)
+
+- `dead_code()` 段落を「単語の共有グラフ」とみなし，`sentence_id / paragraph_id /
+  component / isolated` を返す(1文1行)．`isolated` はその文が
+  段落内のどの文とも(前方・後方どちらにも)つながっていないこと
+- `broken_paragraphs()` `dead_code()` の結果から，連結成分が2つ以上ある
+  (話が繋がらない箇所で割れている)`paragraph_id` を挙げる
+- (内部) `find_components()` 段落ごとの union-find
+
 使い方は次のとおり(段落の情報が要るので `sentences` を渡す)．
 
 ```r
@@ -87,6 +97,8 @@ sentences <- as_sentences(text)
 words     <- content_words(sentences, bin_dir = "d:/pf/mecab/bin")
 links     <- connect_sentences(words, sentences)
 print_sujimichi(links, sentences)
+dead      <- dead_code(links, sentences)
+broken_paragraphs(dead)
 ```
 
 #### 決めたこと(実装しながら)
@@ -148,13 +160,22 @@ print_sujimichi(links, sentences)
 - **字下げ・印の計算はプレーンな文字列で行い，色付けは最後に重ねる**．
   ANSI エスケープは表示幅を持たないので，色を付けても後続の文の
   字下げがずれない．
+- **「孤立文」は `is.na(prev_id)` だけでは決めない**．前の TODO に書いた
+  素朴な案(`prev_id` が `NA` なら孤立)だと，段落の1文目
+  (design.md の例で言えばトピックセンテンス)は前方につながる先が
+  そもそも無いので，後方から何文参照されていても孤立扱いになってしまう．
+  そこで `dead_code()` は段落を「語を共有する文どうしの無向グラフ」とみなし，
+  **連結成分が自分1文だけ(前方にも後方にもつながりが無い)ときだけ孤立**
+  と判定する(design.md の連結成分の案をそのまま孤立文の判定にも使う形)．
+  グラフの成分分けは外部パッケージに頼らず，`R/dead_code.R` 内の
+  `find_components()`(素朴な union-find)で行う．
+- **`broken_paragraphs()` は段落単位**．成分が2つ以上の段落は，
+  文どうしはどこかしらつながっていても，段落全体としては話が
+  繋がらない箇所で割れている(design.md の「連結成分」の判定)．
 
 ### TODO / 今後の候補
 
-- (未着手) **段階1の残り**．
-  5. デッドコードの検出(孤立文 + 連結成分)．
-     孤立文は `is.na(prev_id)` で取れる．連結成分は別途
-- (未着手) 手順4を含めて `R CMD check` を通す
+- (未着手) 手順4・5を含めて `R CMD check` を通す
   (`stringi` を Imports に追加済みだが，まだ確認していない)
 - (未着手) Markdown をプレーンテキストに変換する関数
   ([design.md](design.md) の「未確認の論点」)
