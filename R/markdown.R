@@ -44,8 +44,44 @@
 #' @export
 strip_markdown <- function(text, list_end = sentence_marks()[[2]]){
   lines <- drop_code_blocks(as.character(text))
-  vapply(lines, strip_markdown_line, character(1),
-         list_end = list_end, USE.NAMES = FALSE)
+  ends  <- list_item_ends(lines)
+  out   <- vapply(lines, strip_markdown_line, character(1), USE.NAMES = FALSE)
+  if(nzchar(list_end) && any(ends)){
+    out[ends] <- vapply(out[ends], add_sentence_end, character(1),
+                        mark = list_end, USE.NAMES = FALSE)
+  }
+  out
+}
+
+#' Find the last line of each list item
+#'
+#' Internal function for [strip_markdown()].
+#' An item may run over several lines: the lines after the marker are
+#' indented and carry no marker of their own.  The terminator belongs at
+#' the end of the whole item, not at the end of its first line, which
+#' would cut the item in two.
+#'
+#' @param lines A character vector.
+#' @return A logical vector, `TRUE` on the last line of each item.
+#' @keywords internal
+list_item_ends <- function(lines){
+  start  <- grepl("^[[:blank:]]*([-*+]|[0-9]+[.)])[[:blank:]]+", lines,
+                  perl = TRUE)
+  blank  <- !nzchar(trimws(lines))
+  indent <- grepl("^[[:blank:]]", lines, perl = TRUE)
+  in_item <- logical(length(lines))
+  open    <- FALSE
+  for(i in seq_along(lines)){
+    if(start[[i]]){
+      open <- TRUE
+    } else if(blank[[i]] || !indent[[i]]){
+      open <- FALSE
+    }
+    in_item[[i]] <- open
+  }
+  carried <- in_item & !start          # a line that carries an item on
+  after   <- c(carried[-1], FALSE)     # is the next line such a line?
+  in_item & !after
 }
 
 #' Drop the lines of fenced code blocks
@@ -71,17 +107,13 @@ drop_code_blocks <- function(lines){
 #' Internal function for [strip_markdown()].
 #'
 #' @param line A string.
-#' @inheritParams strip_markdown
 #' @return A string.
 #' @keywords internal
-strip_markdown_line <- function(line, list_end = ""){
+strip_markdown_line <- function(line){
   # blockquote: one or more leading "> " markers, possibly nested
   line <- gsub("^([[:blank:]]*>[[:blank:]]?)+", "", line, perl = TRUE)
   # heading: leading # marks
   line <- gsub("^[[:blank:]]*#{1,6}[[:blank:]]+", "", line, perl = TRUE)
-  # a list item stands on its own, so remember it before the marker goes
-  item <- grepl("^[[:blank:]]*([-*+]|[0-9]+[.)])[[:blank:]]+", line,
-                perl = TRUE)
   # unordered list marker
   line <- gsub("^[[:blank:]]*[-*+][[:blank:]]+", "", line, perl = TRUE)
   # ordered list marker
@@ -99,11 +131,31 @@ strip_markdown_line <- function(line, list_end = ""){
   line <- gsub("\\*\\*([^*]+)\\*\\*", "\\1", line, perl = TRUE)
   line <- gsub("__([^_]+)__", "\\1", line, perl = TRUE)
   line <- gsub("\\*([^*]+)\\*", "\\1", line, perl = TRUE)
-  # inline code holding no letter and no digit: drop the span as a whole
-  line <- gsub("`[^`\\p{L}\\p{N}]*`", "", line, perl = TRUE)
-  # inline code: keep the content, drop the backticks
-  line <- gsub("`([^`]*)`", "\\1", line, perl = TRUE)
-  if(item) line <- add_sentence_end(line, list_end)
+  strip_code_spans(line)
+}
+
+#' Take the inline code spans out of a line
+#'
+#' Internal function for [strip_markdown()].
+#' A span keeps its content and loses the backticks, unless the content
+#' holds no letter and no digit, in which case the span goes away with
+#' it; a bare mark left behind would be read as the end of a sentence.
+#'
+#' The spans are taken one pair of backticks at a time, from the left.
+#' A single pattern would match from the closing backtick of one span to
+#' the opening backtick of the next, and would swallow what lies between
+#' them: `` `a`，`b` `` would come out as `ab`.
+#'
+#' @param line A string.
+#' @return A string.
+#' @keywords internal
+strip_code_spans <- function(line){
+  found <- gregexpr("`[^`]*`", line, perl = TRUE)
+  spans <- regmatches(line, found)[[1]]
+  if(!length(spans)) return(line)
+  body <- substr(spans, 2L, nchar(spans) - 1L)
+  keep <- grepl("[\\p{L}\\p{N}]", body, perl = TRUE)
+  regmatches(line, found) <- list(ifelse(keep, body, ""))
   line
 }
 
@@ -121,14 +173,8 @@ add_sentence_end <- function(line, mark){
   if(!nzchar(mark)) return(line)
   body <- trimws(line)
   if(!nzchar(body)) return(line)
-  # the same closing brackets and quotation marks as
-  # move_mark_after_close(), written as code points to keep this file
-  # ASCII: 」』〉》）］”’ and the ASCII ones
-  close <- paste0(intToUtf8(c(0x300d, 0x300f, 0x3009, 0x300b,
-                              0xff09, 0xff3d, 0x201d, 0x2019)),
-                  ")\\]\"'")
-  ends  <- paste0("[", paste(sentence_marks(), collapse = ""),
-                  "][", close, "]*$")
+  ends <- paste0("[", paste(sentence_marks(), collapse = ""),
+                 "][", closing_marks(), "]*$")
   if(grepl(ends, body, perl = TRUE)) return(line)
   paste0(body, mark)
 }

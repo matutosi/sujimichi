@@ -19,6 +19,16 @@ test_that("a list item is closed so that it stands as one sentence", {
   expect_equal(strip_markdown("  - 入れ子"), "入れ子．")
 })
 
+test_that("a list item that runs over lines is closed only at its end", {
+  lines <- c("1. 最初に作る．自分の文章から段落を選び，",
+             "   ラベルを手で付ける",
+             "2. 次にする")
+  expect_equal(strip_markdown(lines),
+               c("最初に作る．自分の文章から段落を選び，",
+                 "ラベルを手で付ける．",
+                 "次にする．"))
+})
+
 test_that("a list item that already ends with a terminator is left alone", {
   expect_equal(strip_markdown("- 項目だ．"), "項目だ．")
   expect_equal(strip_markdown("- 項目だ。"), "項目だ。")
@@ -63,6 +73,16 @@ test_that("an inline code span of marks only is dropped with its content", {
   # 区切りの空白は残るが，文末と読まれる裸の「．」は消える
   expect_equal(strip_markdown("区切りは(`.` `．` `。`)．"), "区切りは(  )．")
   expect_equal(strip_markdown("`+` は足し算．"), " は足し算．")
+})
+
+test_that("what lies between two code spans is kept", {
+  # 1つの正規表現だと，前の span の閉じから次の span の開きまでを
+  # 拾ってしまい，間の「，」ごと消える
+  expect_equal(strip_markdown("`shiritori`，`renbun`．"), "shiritori，renbun．")
+  expect_equal(strip_markdown("`ui.R`/`server.R` は別だ．"),
+               "ui.R/server.R は別だ．")
+  # 記号だけの span は消え，その周りの空白は残る
+  expect_equal(strip_markdown("`+` と `-` と `a`．"), " と  と a．")
 })
 
 test_that("emphasis marks are removed and the text is kept", {
