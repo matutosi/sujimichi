@@ -17,6 +17,45 @@ sample_links <- function(){
   connect_sentences(words, sentences)
 }
 
+test_that("the mark is widened over a compound split by the analyser", {
+  # MeCab(ipadic)は「畦畔」を「畦」と「畔」に割る
+  sentences <- as_sentences(c("畦畔は水を保持する．", "畦畔には草原が成立する．"))
+  words <- tibble::tribble(
+    ~sentence_id, ~position, ~word, ~pos,   ~pos_1,
+    1,            1,         "畦",   "名詞", "一般",
+    1,            2,         "畔",   "名詞", "一般",
+    1,            4,         "水",   "名詞", "一般",
+    2,            1,         "畦",   "名詞", "一般",
+    2,            2,         "畔",   "名詞", "一般",
+    2,            5,         "草原", "名詞", "一般")
+  links <- connect_sentences(words, sentences)
+  expect_equal(sujimichi_lines(links, sentences)$marked[[2]], "畦")
+  expect_equal(sujimichi_lines(links, sentences, words)$marked[[2]], "畦畔")
+})
+
+test_that("a word with no noun beside it is left as it is", {
+  sentences <- as_sentences(c("草原が成立する．", "草原は重要だ．"))
+  words <- tibble::tribble(
+    ~sentence_id, ~position, ~word,   ~pos,   ~pos_1,
+    1,            1,         "草原",   "名詞", "一般",
+    2,            1,         "草原",   "名詞", "一般")
+  links <- connect_sentences(words, sentences)
+  expect_equal(sujimichi_lines(links, sentences, words)$marked[[2]], "草原")
+})
+
+test_that("widen_to_compound() gives the word back when it cannot widen", {
+  words <- tibble::tribble(
+    ~sentence_id, ~position, ~word, ~pos,   ~pos_1,
+    1,            1,         "見る", "動詞", "自立",
+    1,            2,         "空",   "名詞", "一般")
+  # 動詞なので広げない
+  expect_equal(widen_to_compound(words, 1, 1, "見る", "空を見る．"), "見る")
+  # その位置の語が表に無ければ元の語に戻す
+  expect_equal(widen_to_compound(words, 1, 9, "空", "空を見る．"), "空")
+  # 語の表でなければ元の語に戻す
+  expect_equal(widen_to_compound(data.frame(a = 1), 1, 1, "空", "空．"), "空")
+})
+
 test_that("sujimichi_lines() returns one row per sentence", {
   lines <- sujimichi_lines(sample_links(), as_sentences(sample_text()))
   expect_s3_class(lines, "tbl_df")

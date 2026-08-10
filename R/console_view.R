@@ -27,9 +27,18 @@
 #' lemma differs from the form actually written -- the sentence is
 #' shown as plain text, at the same indent as the sentence it links to.
 #'
+#' An analyser splits a compound word that is not in its dictionary:
+#' MeCab with ipadic reads 「畦畔」 as 「畦」 and 「畔」, and marking
+#' 「(畦)畔」 reads oddly even though the link itself is sound.  Give
+#' `words` and the mark is widened over the nouns next to the shared
+#' one, so that the whole compound is marked.  Only the mark changes;
+#' the links were worked out in [connect_sentences()] and are untouched.
+#'
 #' @param links A data.frame as returned by [connect_sentences()].
 #' @param sentences A data.frame with `sentence_id` and `sentence`,
 #'   as returned by [as_sentences()].
+#' @param words A data.frame as returned by [content_words()], or
+#'   `NULL` (the default) to mark the shared word on its own.
 #' @param wrap A character vector of length 2: the marks put around
 #'   the shared word.
 #' @return A tibble with one row per sentence, in `sentence_id` order,
@@ -47,7 +56,8 @@
 #' sujimichi_lines(links, sentences)
 #'
 #' @export
-sujimichi_lines <- function(links, sentences, wrap = c("(", ")")){
+sujimichi_lines <- function(links, sentences, words = NULL,
+                            wrap = c("(", ")")){
   if(!is.data.frame(links) || !all(c("sentence_id", "word", "prev_id",
                                      "is_main") %in% colnames(links))){
     stop("`links` must be a data.frame as returned by connect_sentences().",
@@ -80,7 +90,10 @@ sujimichi_lines <- function(links, sentences, wrap = c("(", ")")){
       after[[k]]  <- ""
       next
     }
-    at <- regexpr(word, text, fixed = TRUE)
+    shown <- if(is.null(words)) word else
+             widen_to_compound(words, main[["sentence_id"]][[k]],
+                               main[["position"]][[k]], word, text)
+    at <- regexpr(shown, text, fixed = TRUE)
     if(at < 0){
       # the lemma is not a literal substring of the sentence
       # (for example a conjugated verb) -- show it plainly
@@ -91,9 +104,9 @@ sujimichi_lines <- function(links, sentences, wrap = c("(", ")")){
       next
     }
     before[[k]] <- substr(text, 1, at - 1)
-    marked[[k]] <- word
-    after[[k]]  <- substr(text, at + nchar(word), nchar(text))
-    plain[[k]]  <- paste0(before[[k]], wrap[[1]], word, wrap[[2]], after[[k]])
+    marked[[k]] <- shown
+    after[[k]]  <- substr(text, at + nchar(shown), nchar(text))
+    plain[[k]]  <- paste0(before[[k]], wrap[[1]], shown, wrap[[2]], after[[k]])
 
     prev_plain <- plain[[as.character(prev)]]
     at_prev    <- regexpr(word, prev_plain, fixed = TRUE)
@@ -109,10 +122,49 @@ sujimichi_lines <- function(links, sentences, wrap = c("(", ")")){
                  after = unname(after))
 }
 
+#' Widen a word over the nouns beside it
+#'
+#' Internal function for [sujimichi_lines()].
+#' An analyser splits a compound word it does not know, and the pieces
+#' sit next to each other as nouns.  The run of nouns around `position`
+#' is put back together, and taken only when it reads in the sentence as
+#' it stands; a lemma that differs from what was written would otherwise
+#' produce a string that is nowhere in the text.
+#'
+#' @param words A data.frame as returned by [content_words()].
+#' @param sentence_id The sentence the word is in.
+#' @param position The place of the word among the morphemes.
+#' @param word A string.  The shared word itself.
+#' @param text A string.  The sentence as written.
+#' @return A string: the compound, or `word` when there is none.
+#' @keywords internal
+widen_to_compound <- function(words, sentence_id, position, word, text){
+  cols <- c("sentence_id", "position", "word", "pos")
+  if(!is.data.frame(words) || !all(cols %in% colnames(words))) return(word)
+  if(is.na(position)) return(word)
+  here <- words[words[["sentence_id"]] %in% sentence_id, , drop = FALSE]
+  here <- here[order(here[["position"]]), , drop = FALSE]
+  at   <- match(position, here[["position"]])
+  if(is.na(at)) return(word)
+  noun <- here[["pos"]] == content_pos()[[1]]   # 名詞
+  if(!isTRUE(noun[[at]])) return(word)
+  place <- here[["position"]]
+  from  <- at
+  to    <- at
+  while(from > 1L && isTRUE(noun[[from - 1L]]) &&
+        place[[from - 1L]] == place[[from]] - 1L) from <- from - 1L
+  while(to < nrow(here) && isTRUE(noun[[to + 1L]]) &&
+        place[[to + 1L]] == place[[to]] + 1L) to <- to + 1L
+  if(from == to) return(word)
+  run <- paste(here[["word"]][from:to], collapse = "")
+  if(regexpr(run, text, fixed = TRUE) > 0) run else word
+}
+
 #' @rdname sujimichi_lines
 #' @export
-format_sujimichi <- function(links, sentences, wrap = c("(", ")")){
-  lines <- sujimichi_lines(links, sentences, wrap = wrap)
+format_sujimichi <- function(links, sentences, words = NULL,
+                             wrap = c("(", ")")){
+  lines <- sujimichi_lines(links, sentences, words = words, wrap = wrap)
   marked <- ifelse(nzchar(lines[["marked"]]),
                    paste0(wrap[[1]], lines[["marked"]], wrap[[2]]), "")
   paste0(strrep(" ", lines[["indent"]]),
@@ -128,9 +180,10 @@ format_sujimichi <- function(links, sentences, wrap = c("(", ")")){
 #' @return `print_sujimichi()`: the plain lines, as from
 #'   `format_sujimichi()`, invisibly.
 #' @export
-print_sujimichi <- function(links, sentences, wrap = c("(", ")"),
+print_sujimichi <- function(links, sentences, words = NULL,
+                            wrap = c("(", ")"),
                             color = interactive(), file = ""){
-  lines <- sujimichi_lines(links, sentences, wrap = wrap)
+  lines <- sujimichi_lines(links, sentences, words = words, wrap = wrap)
   marked <- ifelse(!nzchar(lines[["marked"]]), "",
                    paste0(wrap[[1]], lines[["marked"]], wrap[[2]]))
   shown <- if(color) vapply(marked, ansi_cyan, character(1)) else marked

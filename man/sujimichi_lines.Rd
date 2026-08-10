@@ -6,13 +6,14 @@
 \alias{print_sujimichi}
 \title{Show sentences on the console with the connecting word aligned}
 \usage{
-sujimichi_lines(links, sentences, wrap = c("(", ")"))
+sujimichi_lines(links, sentences, words = NULL, wrap = c("(", ")"))
 
-format_sujimichi(links, sentences, wrap = c("(", ")"))
+format_sujimichi(links, sentences, words = NULL, wrap = c("(", ")"))
 
 print_sujimichi(
   links,
   sentences,
+  words = NULL,
   wrap = c("(", ")"),
   color = interactive(),
   file = ""
@@ -23,6 +24,9 @@ print_sujimichi(
 
 \item{sentences}{A data.frame with \code{sentence_id} and \code{sentence},
 as returned by \code{\link[=as_sentences]{as_sentences()}}.}
+
+\item{words}{A data.frame as returned by \code{\link[=content_words]{content_words()}}, or
+\code{NULL} (the default) to mark the shared word on its own.}
 
 \item{wrap}{A character vector of length 2: the marks put around
 the shared word.}
@@ -70,6 +74,13 @@ A word (a lemma) is looked for as a literal substring of the
 sentence text.  When it is not found -- for example a verb whose
 lemma differs from the form actually written -- the sentence is
 shown as plain text, at the same indent as the sentence it links to.
+
+An analyser splits a compound word that is not in its dictionary:
+MeCab with ipadic reads 「畦畔」 as 「畦」 and 「畔」, and marking
+「(畦)畔」 reads oddly even though the link itself is sound.  Give
+\code{words} and the mark is widened over the nouns next to the shared
+one, so that the whole compound is marked.  Only the mark changes;
+the links were worked out in \code{\link[=connect_sentences]{connect_sentences()}} and are untouched.
 }
 \examples{
 sentences <- as_sentences(sample_text())
