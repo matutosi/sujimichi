@@ -4,14 +4,24 @@
 \alias{strip_markdown}
 \title{Strip Markdown notation to plain text}
 \usage{
-strip_markdown(text, list_end = sentence_marks()[[2]])
+strip_markdown(
+  text,
+  end_mark = sentence_marks()[[2]],
+  heading = c("merge", "keep", "drop")
+)
 }
 \arguments{
 \item{text}{A character vector, one element per line.}
 
-\item{list_end}{A string added to the end of a list item that does not
-end with a sentence terminator.  The fullwidth full stop (．) by
-default; \code{""} adds nothing.}
+\item{end_mark}{A string added to the end of a list item or a heading
+that does not end with a sentence terminator.  The fullwidth full
+stop (．) by default; \code{""} adds nothing, and then a heading is kept
+as its own paragraph whatever \code{heading} says, since joining it to
+the text below would glue it to the first sentence.}
+
+\item{heading}{One of \code{"merge"} (join a heading to the paragraph
+below it), \code{"keep"} (leave it as its own paragraph) or \code{"drop"}
+(remove headings).}
 }
 \value{
 A character vector of lines, with Markdown notation removed.
@@ -37,13 +47,21 @@ removed and the text between them is kept.  A lone \verb{_} is left alone,
 because it is more often part of a name such as \code{sentence_id} than a
 mark of emphasis.
 
-A list item is a sentence of its own, but it rarely ends with a full
-stop.  \code{\link[=split_sentences]{split_sentences()}} joins the lines of a paragraph, because a
-Japanese manuscript breaks a line in the middle of a sentence, so the
-items of a list would otherwise be run together into one long
-sentence.  A terminator is therefore added to an item that does not
-already end with one.  Pass \code{list_end = ""} to leave the items as
-they are.
+A list item and a heading are each a sentence of their own, but
+neither usually ends with a full stop.  \code{\link[=split_sentences]{split_sentences()}} joins the
+lines of a paragraph, because a Japanese manuscript breaks a line in
+the middle of a sentence, so the items of a list would otherwise be
+run together into one long sentence.  A terminator is therefore added
+to a line that does not already end with one.  Pass \code{end_mark = ""}
+to leave the lines as they are.
+
+A heading is followed by a blank line, so it would stand as a
+paragraph of its own and share no word with anything.  It is joined
+to the paragraph below it instead, where it reads as the sentence
+that the paragraph is about, and where a heading whose words do not
+come back in the text below shows up as dead code.  Pass
+\code{heading = "keep"} to leave a heading as its own paragraph, or
+\code{heading = "drop"} to take headings out of the analysis.
 }
 \examples{
 strip_markdown(c("# 見出し", "",
@@ -53,5 +71,8 @@ strip_markdown("**強調**した[リンク](https://example.com)．")
 
 # a list item becomes a sentence of its own
 strip_markdown(c("- 箇条書き1", "- 箇条書き2"))
+
+# a heading joins the paragraph below it
+strip_markdown(c("# 目的", "", "この節では目的を述べる．"))
 
 }

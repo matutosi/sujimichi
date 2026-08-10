@@ -1,14 +1,36 @@
 test_that("a heading marker is removed and the text is kept", {
-  expect_equal(strip_markdown("# 見出し"), "見出し")
-  expect_equal(strip_markdown("### 三段見出し"), "三段見出し")
+  expect_equal(strip_markdown("# 見出し", end_mark = ""), "見出し")
+  expect_equal(strip_markdown("### 三段見出し", end_mark = ""), "三段見出し")
 })
 
 test_that("a list marker is removed and the text is kept", {
-  expect_equal(strip_markdown("- 箇条書き", list_end = ""), "箇条書き")
-  expect_equal(strip_markdown("* 箇条書き", list_end = ""), "箇条書き")
-  expect_equal(strip_markdown("1. 番号付き", list_end = ""), "番号付き")
-  expect_equal(strip_markdown("  - 入れ子の箇条書き", list_end = ""),
+  expect_equal(strip_markdown("- 箇条書き", end_mark = ""), "箇条書き")
+  expect_equal(strip_markdown("* 箇条書き", end_mark = ""), "箇条書き")
+  expect_equal(strip_markdown("1. 番号付き", end_mark = ""), "番号付き")
+  expect_equal(strip_markdown("  - 入れ子の箇条書き", end_mark = ""),
                "入れ子の箇条書き")
+})
+
+test_that("a heading joins the paragraph below it", {
+  lines <- c("# 目的", "", "この節では目的を述べる．")
+  expect_equal(strip_markdown(lines),
+               c("目的．", "この節では目的を述べる．"))
+  sentences <- as_sentences(strip_markdown(lines))
+  expect_equal(sentences$paragraph_id, c(1, 1))
+  expect_equal(sentences$sentence, c("目的．", "この節では目的を述べる．"))
+})
+
+test_that("heading = 'keep' leaves the heading as its own paragraph", {
+  lines <- c("# 目的", "", "この節では目的を述べる．")
+  sentences <- as_sentences(strip_markdown(lines, heading = "keep"))
+  expect_equal(sentences$paragraph_id, c(1, 2))
+  expect_equal(sentences$sentence, c("目的", "この節では目的を述べる．"))
+})
+
+test_that("heading = 'drop' takes the headings out", {
+  lines <- c("# 目的", "", "この節では目的を述べる．")
+  expect_equal(strip_markdown(lines, heading = "drop"),
+               c("", "この節では目的を述べる．"))
 })
 
 test_that("a list item is closed so that it stands as one sentence", {
@@ -35,8 +57,7 @@ test_that("a list item that already ends with a terminator is left alone", {
   expect_equal(strip_markdown("- 項目だ(補足．)"), "項目だ(補足．)")
 })
 
-test_that("only a list item is closed, not a heading or a plain line", {
-  expect_equal(strip_markdown("# 見出し"), "見出し")
+test_that("a plain line and a blockquote are not closed", {
   expect_equal(strip_markdown("本文だ"), "本文だ")
   expect_equal(strip_markdown("> 引用文"), "引用文")
 })
@@ -113,5 +134,6 @@ test_that("a plain line without notation is unchanged", {
 test_that("strip_markdown() output can be handed to as_sentences()", {
   lines <- c("# 見出し", "", "本文だ．", "", "- 箇条書き1．", "- 箇条書き2．")
   sentences <- as_sentences(strip_markdown(lines))
-  expect_equal(sentences$sentence, c("見出し", "本文だ．", "箇条書き1．", "箇条書き2．"))
+  expect_equal(sentences$sentence,
+               c("見出し．", "本文だ．", "箇条書き1．", "箇条書き2．"))
 })

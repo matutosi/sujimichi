@@ -19,18 +19,31 @@
 #' because it is more often part of a name such as `sentence_id` than a
 #' mark of emphasis.
 #'
-#' A list item is a sentence of its own, but it rarely ends with a full
-#' stop.  [split_sentences()] joins the lines of a paragraph, because a
-#' Japanese manuscript breaks a line in the middle of a sentence, so the
-#' items of a list would otherwise be run together into one long
-#' sentence.  A terminator is therefore added to an item that does not
-#' already end with one.  Pass `list_end = ""` to leave the items as
-#' they are.
+#' A list item and a heading are each a sentence of their own, but
+#' neither usually ends with a full stop.  [split_sentences()] joins the
+#' lines of a paragraph, because a Japanese manuscript breaks a line in
+#' the middle of a sentence, so the items of a list would otherwise be
+#' run together into one long sentence.  A terminator is therefore added
+#' to a line that does not already end with one.  Pass `end_mark = ""`
+#' to leave the lines as they are.
+#'
+#' A heading is followed by a blank line, so it would stand as a
+#' paragraph of its own and share no word with anything.  It is joined
+#' to the paragraph below it instead, where it reads as the sentence
+#' that the paragraph is about, and where a heading whose words do not
+#' come back in the text below shows up as dead code.  Pass
+#' `heading = "keep"` to leave a heading as its own paragraph, or
+#' `heading = "drop"` to take headings out of the analysis.
 #'
 #' @param text A character vector, one element per line.
-#' @param list_end A string added to the end of a list item that does not
-#'   end with a sentence terminator.  The fullwidth full stop (．) by
-#'   default; `""` adds nothing.
+#' @param end_mark A string added to the end of a list item or a heading
+#'   that does not end with a sentence terminator.  The fullwidth full
+#'   stop (．) by default; `""` adds nothing, and then a heading is kept
+#'   as its own paragraph whatever `heading` says, since joining it to
+#'   the text below would glue it to the first sentence.
+#' @param heading One of `"merge"` (join a heading to the paragraph
+#'   below it), `"keep"` (leave it as its own paragraph) or `"drop"`
+#'   (remove headings).
 #' @return A character vector of lines, with Markdown notation removed.
 #' @examples
 #' strip_markdown(c("# 見出し", "",
@@ -41,16 +54,54 @@
 #' # a list item becomes a sentence of its own
 #' strip_markdown(c("- 箇条書き1", "- 箇条書き2"))
 #'
+#' # a heading joins the paragraph below it
+#' strip_markdown(c("# 目的", "", "この節では目的を述べる．"))
+#'
 #' @export
-strip_markdown <- function(text, list_end = sentence_marks()[[2]]){
-  lines <- drop_code_blocks(as.character(text))
-  ends  <- list_item_ends(lines)
-  out   <- vapply(lines, strip_markdown_line, character(1), USE.NAMES = FALSE)
-  if(nzchar(list_end) && any(ends)){
-    out[ends] <- vapply(out[ends], add_sentence_end, character(1),
-                        mark = list_end, USE.NAMES = FALSE)
+strip_markdown <- function(text, end_mark = sentence_marks()[[2]],
+                           heading = c("merge", "keep", "drop")){
+  heading <- match.arg(heading)
+  lines   <- drop_code_blocks(as.character(text))
+  head_at <- grepl("^[[:blank:]]*#{1,6}[[:blank:]]+", lines, perl = TRUE)
+  ends    <- list_item_ends(lines)
+  out     <- vapply(lines, strip_markdown_line, character(1),
+                    USE.NAMES = FALSE)
+  if(heading == "drop") return(out[!head_at])
+  if(nzchar(end_mark)){
+    close <- ends | (heading == "merge" & head_at)
+    if(any(close)){
+      out[close] <- vapply(out[close], add_sentence_end, character(1),
+                           mark = end_mark, USE.NAMES = FALSE)
+    }
+    if(heading == "merge") out <- drop_blank_after(out, head_at)
   }
   out
+}
+
+#' Drop the blank lines that follow a marked line
+#'
+#' Internal function for [strip_markdown()].
+#' A blank line starts a new paragraph, so removing the one below a
+#' heading is what joins the heading to the text that follows.
+#'
+#' @param lines A character vector.
+#' @param flag A logical vector, `TRUE` on the lines to look below.
+#' @return A character vector.
+#' @keywords internal
+drop_blank_after <- function(lines, flag){
+  blank <- !nzchar(trimws(lines))
+  drop  <- logical(length(lines))
+  below <- FALSE
+  for(i in seq_along(lines)){
+    if(flag[[i]]){
+      below <- TRUE
+    } else if(below && blank[[i]]){
+      drop[[i]] <- TRUE
+    } else {
+      below <- FALSE
+    }
+  }
+  lines[!drop]
 }
 
 #' Find the last line of each list item
