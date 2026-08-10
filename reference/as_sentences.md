@@ -43,9 +43,11 @@ because a Japanese manuscript often breaks a line at a sentence end or
 at a phrase boundary. A space is kept only where an ASCII word would
 otherwise be glued to the next one.
 
-An ASCII full stop between digits is not a terminator, so that "0.5"
-stays in one piece. A terminator followed by a closing bracket or
-quotation mark keeps the bracket in the same sentence.
+An ASCII full stop ends a sentence only at the end of a paragraph, or
+before a space or a closing bracket. A full stop inside a word is part
+of it, so that "0.5", "ui.R" and ".claude/done.md" stay in one piece. A
+terminator followed by a closing bracket or quotation mark keeps the
+bracket in the same sentence.
 
 ## Examples
 
