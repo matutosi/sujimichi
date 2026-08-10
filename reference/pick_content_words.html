@@ -94,7 +94,12 @@ after the other morphemes are dropped.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The table may use either the Japanese column names of 'moranajp'
+    <p>A morpheme made only of punctuation and symbols is dropped, whatever
+its part of speech.  MeCab with ipadic reads a symbol it does not know
+(<code>**</code>, <code>(</code>, <code>/</code>, <code>:</code> and the like) as 名詞・サ変接続, so filtering by
+part of speech alone lets Markdown notation through as if it were a
+content word.</p>
+<p>The table may use either the Japanese column names of 'moranajp'
 (表層形, 品詞, 品詞細分類1, 原形) or the English ones
 (<code>form</code>, <code>pos</code>, <code>pos_1</code>, <code>lemma</code>); see <code>moranajp::moranajp_all()</code>.</p>
     </div>

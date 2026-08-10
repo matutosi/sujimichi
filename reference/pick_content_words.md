@@ -50,6 +50,12 @@ word keeps a smaller number after the other morphemes are dropped.
 
 ## Details
 
+A morpheme made only of punctuation and symbols is dropped, whatever its
+part of speech. MeCab with ipadic reads a symbol it does not know (`**`,
+`(`, `/`, `:` and the like) as 名詞・サ変接続, so filtering by part of
+speech alone lets Markdown notation through as if it were a content
+word.
+
 The table may use either the Japanese column names of 'moranajp'
 (表層形, 品詞, 品詞細分類1, 原形) or the English ones (`form`, `pos`,
 `pos_1`, `lemma`); see `moranajp::moranajp_all()`.

@@ -5,13 +5,19 @@ result can be handed to as_sentences().  A fenced code block
 alike, because code is not prose and should not be split into
 sentences.  A heading, a list marker and a blockquote marker are
 each removed, but the text after them is kept.  An inline code span
-keeps its content and loses only the backticks."><meta property="og:description" content="Removes Markdown syntax markers while keeping the body text, so the
+keeps its content and loses only the backticks, unless the content
+holds no letter and no digit (`.`), in which case the span goes
+away with it; a bare mark left behind would otherwise be read as the
+end of a sentence."><meta property="og:description" content="Removes Markdown syntax markers while keeping the body text, so the
 result can be handed to as_sentences().  A fenced code block
 (``` or ~~~) is removed entirely, fence lines and content
 alike, because code is not prose and should not be split into
 sentences.  A heading, a list marker and a blockquote marker are
 each removed, but the text after them is kept.  An inline code span
-keeps its content and loses only the backticks."></head><body>
+keeps its content and loses only the backticks, unless the content
+holds no letter and no digit (`.`), in which case the span goes
+away with it; a bare mark left behind would otherwise be read as the
+end of a sentence."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -51,7 +57,10 @@ result can be handed to <code><a href="as_sentences.html">as_sentences()</a></co
 alike, because code is not prose and should not be split into
 sentences.  A heading, a list marker and a blockquote marker are
 each removed, but the text after them is kept.  An inline code span
-keeps its content and loses only the backticks.</p>
+keeps its content and loses only the backticks, unless the content
+holds no letter and no digit (<code>`.`</code>), in which case the span goes
+away with it; a bare mark left behind would otherwise be read as the
+end of a sentence.</p>
     </div>
 
     <div class="section level2">
@@ -71,6 +80,16 @@ keeps its content and loses only the backticks.</p>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A character vector of lines, with Markdown notation removed.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>A link (<code>[text](url)</code>) keeps its text and loses the address, since the
+text is part of the prose while the address is not.  An image
+(<code>![alt](url)</code>) is removed as a whole, and so is an autolink
+(<code>&lt;https://example.com&gt;</code>).  Emphasis marks (<code>**</code>, <code>*</code>, <code>__</code>) are
+removed and the text between them is kept.  A lone <code>_</code> is left alone,
+because it is more often part of a name such as <code>sentence_id</code> than a
+mark of emphasis.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -78,6 +97,8 @@ keeps its content and loses only the backticks.</p>
 <span class="r-in"><span>                  <span class="st">"本文だ．"</span>, <span class="st">""</span>,</span></span>
 <span class="r-in"><span>                  <span class="st">"- 箇条書き1"</span>, <span class="st">"- 箇条書き2"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "見出し"    ""          "本文だ．"  ""          "箇条書き1" "箇条書き2"</span>
+<span class="r-in"><span><span class="fu">strip_markdown</span><span class="op">(</span><span class="st">"**強調**した[リンク](https://example.com)．"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "強調したリンク．"</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

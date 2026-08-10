@@ -60,6 +60,15 @@ When 'moranajp' is not installed, or when the analyser cannot be run, a
 message is shown and `NULL` is returned, so that a script does not stop
 on a machine without an analyser.
 
+'moranajp' joins the sentences with the marker `"BP"` and finds them
+again by looking for a morpheme whose surface form is exactly `"BP"`.
+When a sentence begins or ends with a latin word, MeCab reads the marker
+and that word as one unknown noun (`"BPMeCab"`), the boundary is lost,
+and every sentence after it is numbered one too low. Each sentence is
+therefore padded with a space, which keeps the marker a morpheme of its
+own. The numbering is checked afterwards, and a message is shown when it
+still does not match.
+
 MeCab on Windows reads its settings from the path it was built with, and
 stops when the file is not there. `analyze_morphemes()` therefore looks
 for `mecabrc` next to `bin_dir` and points the `MECABRC` environment
