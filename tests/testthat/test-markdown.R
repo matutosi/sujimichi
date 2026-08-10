@@ -29,6 +29,34 @@ test_that("an inline code span keeps its content and loses the backticks", {
   expect_equal(strip_markdown("`sujimichi` パッケージ．"), "sujimichi パッケージ．")
 })
 
+test_that("an inline code span of marks only is dropped with its content", {
+  # 記法だけ外すと，裸になった「．」が文末と読まれてしまう
+  # 区切りの空白は残るが，文末と読まれる裸の「．」は消える
+  expect_equal(strip_markdown("区切りは(`.` `．` `。`)．"), "区切りは(  )．")
+  expect_equal(strip_markdown("`+` は足し算．"), " は足し算．")
+})
+
+test_that("emphasis marks are removed and the text is kept", {
+  expect_equal(strip_markdown("**強調**した．"), "強調した．")
+  expect_equal(strip_markdown("*強調*した．"), "強調した．")
+  expect_equal(strip_markdown("__強調__した．"), "強調した．")
+  expect_equal(strip_markdown("**前**と**後**．"), "前と後．")
+})
+
+test_that("a lone underscore is left alone", {
+  expect_equal(strip_markdown("列は sentence_id だ．"), "列は sentence_id だ．")
+})
+
+test_that("a link keeps its text and loses the address", {
+  expect_equal(strip_markdown("[表示](https://example.com)する．"), "表示する．")
+  expect_equal(strip_markdown("[表示][ref]する．"), "表示する．")
+})
+
+test_that("an image and an autolink are removed entirely", {
+  expect_equal(strip_markdown("![図1](img/a.png)本文．"), "本文．")
+  expect_equal(strip_markdown("場所は<https://example.com>だ．"), "場所はだ．")
+})
+
 test_that("a plain line without notation is unchanged", {
   expect_equal(strip_markdown("ふつうの文．"), "ふつうの文．")
 })

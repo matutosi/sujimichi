@@ -19,11 +19,24 @@ result can be handed to \code{\link[=as_sentences]{as_sentences()}}.  A fenced c
 alike, because code is not prose and should not be split into
 sentences.  A heading, a list marker and a blockquote marker are
 each removed, but the text after them is kept.  An inline code span
-keeps its content and loses only the backticks.
+keeps its content and loses only the backticks, unless the content
+holds no letter and no digit (\code{`.`}), in which case the span goes
+away with it; a bare mark left behind would otherwise be read as the
+end of a sentence.
+}
+\details{
+A link (\verb{[text](url)}) keeps its text and loses the address, since the
+text is part of the prose while the address is not.  An image
+(\verb{![alt](url)}) is removed as a whole, and so is an autolink
+(\verb{<https://example.com>}).  Emphasis marks (\verb{**}, \code{*}, \verb{__}) are
+removed and the text between them is kept.  A lone \verb{_} is left alone,
+because it is more often part of a name such as \code{sentence_id} than a
+mark of emphasis.
 }
 \examples{
 strip_markdown(c("# 見出し", "",
                   "本文だ．", "",
                   "- 箇条書き1", "- 箇条書き2"))
+strip_markdown("**強調**した[リンク](https://example.com)．")
 
 }
