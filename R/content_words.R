@@ -1,0 +1,272 @@
+#' Parts of speech of a content word
+#'
+#' `content_pos()` lists the parts of speech that carry content:
+#' 名詞 (noun), 動詞 (verb), 形容詞 (adjective) and 副詞 (adverb).
+#' `skipped_pos_1()` lists the sub categories that are dropped even
+#' though the part of speech is a content one, such as 非自立
+#' (dependent), 代名詞 (pronoun) and 数 (numeral).
+#' `stop_words_ja()` lists the lemmas that appear everywhere and
+#' therefore say nothing about the line of reasoning.
+#'
+#' These are the defaults of [pick_content_words()].
+#' Pass your own vector when a text needs a different setting.
+#'
+#' @return A character vector.
+#' @examples
+#' content_pos()
+#' skipped_pos_1()
+#' stop_words_ja()
+#'
+#' @export
+content_pos <- function(){
+  # 名詞 動詞 形容詞 副詞
+  c("\u540d\u8a5e", "\u52d5\u8a5e", "\u5f62\u5bb9\u8a5e", "\u526f\u8a5e")
+}
+
+#' @rdname content_pos
+#' @export
+skipped_pos_1 <- function(){
+  # 非自立 非自立可能 代名詞 数 数詞 接尾 接尾辞
+  c("\u975e\u81ea\u7acb", "\u975e\u81ea\u7acb\u53ef\u80fd",
+    "\u4ee3\u540d\u8a5e", "\u6570", "\u6570\u8a5e",
+    "\u63a5\u5c3e", "\u63a5\u5c3e\u8f9e")
+}
+
+#' @rdname content_pos
+#' @export
+stop_words_ja <- function(){
+  # する ある なる いる できる こと もの ため よう
+  c("\u3059\u308b", "\u3042\u308b", "\u306a\u308b", "\u3044\u308b",
+    "\u3067\u304d\u308b", "\u3053\u3068", "\u3082\u306e",
+    "\u305f\u3081", "\u3088\u3046")
+}
+
+#' Pick the content words out of a morpheme table
+#'
+#' Keeps the morphemes whose part of speech is in `pos`, and returns one
+#' row per kept morpheme.  A word is represented by its lemma (原形), so
+#' that 「つながり」 and 「つながる」 count as the same word.  The surface
+#' form (表層形) is used instead when the analyser does not know the
+#' lemma and writes `"*"`.
+#'
+#' The table may use either the Japanese column names of 'moranajp'
+#' (表層形, 品詞, 品詞細分類1, 原形) or the English ones
+#' (`form`, `pos`, `pos_1`, `lemma`); see [moranajp::moranajp_all()].
+#'
+#' @param morphemes A data.frame of morphemes, as returned by
+#'   [analyze_morphemes()].
+#' @param pos A character vector of parts of speech to keep.
+#' @param skip_pos_1 A character vector of sub categories to drop.
+#' @param stop_words A character vector of words to drop.
+#' @param id_col A string.  The column that holds the sentence number.
+#' @return A tibble with one row per content word and columns
+#'   `sentence_id`, `position`, `word`, `pos` and `pos_1`.
+#'   `position` is the place of the morpheme in its sentence, counted
+#'   over all morphemes, so that an earlier word keeps a smaller number
+#'   after the other morphemes are dropped.
+#' @examples
+#' # a morpheme table as an analyser would return it
+#' morphemes <- data.frame(
+#'   sentence_id = c(1, 1, 1, 1, 1),
+#'   form   = c("文章", "と", "は", "つながり", "だ"),
+#'   pos    = c("名詞", "助詞", "助詞", "動詞", "助動詞"),
+#'   pos_1  = c("一般", "格助詞", "係助詞", "自立", ""),
+#'   lemma  = c("文章", "と", "は", "つながる", "だ"))
+#' pick_content_words(morphemes)
+#'
+#' @export
+pick_content_words <- function(morphemes,
+                               pos        = content_pos(),
+                               skip_pos_1 = skipped_pos_1(),
+                               stop_words = stop_words_ja(),
+                               id_col     = "sentence_id"){
+  if(!is.data.frame(morphemes)){
+    stop("`morphemes` must be a data.frame.", call. = FALSE)
+  }
+  if(!id_col %in% colnames(morphemes)){
+    stop("`morphemes` has no column `", id_col, "`.", call. = FALSE)
+  }
+  form  <- morpheme_col(morphemes, "form")
+  word_pos <- morpheme_col(morphemes, "pos")
+  if(is.null(form) || is.null(word_pos)){
+    stop("`morphemes` needs a surface form and a part of speech column.",
+         call. = FALSE)
+  }
+  lemma <- morpheme_col(morphemes, "lemma")
+  pos_1 <- morpheme_col(morphemes, "pos_1")
+  if(is.null(lemma)) lemma <- form
+  if(is.null(pos_1)) pos_1 <- rep("", length(form))
+  # "*" is what MeCab writes when it does not know the lemma
+  unknown <- is.na(lemma) | lemma %in% c("", "*")
+  word    <- ifelse(unknown, form, lemma)
+  id      <- morphemes[[id_col]]
+  out     <- tibble::tibble(
+    sentence_id = id,
+    position    = stats::ave(seq_along(id), id, FUN = seq_along),
+    word        = as.character(word),
+    pos         = as.character(word_pos),
+    pos_1       = as.character(pos_1))
+  keep <- out[["pos"]] %in% pos &
+          !out[["pos_1"]] %in% skip_pos_1 &
+          !out[["word"]] %in% stop_words &
+          nzchar(out[["word"]])
+  out[keep, , drop = FALSE]
+}
+
+#' Run a morphological analysis on sentences
+#'
+#' Hands the sentences to [moranajp::moranajp_all()] and renames the
+#' `text_id` column to `sentence_id`.  'moranajp' runs 'MeCab',
+#' 'Sudachi' or 'Ginza' on the local machine; nothing is sent over the
+#' network.
+#'
+#' When 'moranajp' is not installed, or when the analyser cannot be run,
+#' a message is shown and `NULL` is returned, so that a script does not
+#' stop on a machine without an analyser.
+#'
+#' MeCab on Windows reads its settings from the path it was built with,
+#' and stops when the file is not there.  `analyze_morphemes()` therefore
+#' looks for `mecabrc` next to `bin_dir` and points the `MECABRC`
+#' environment variable at it while the analysis runs.  An `MECABRC` that
+#' is already set is left alone.
+#'
+#' @param sentences A character vector of sentences, or a data.frame
+#'   with a `sentence` column as returned by [as_sentences()].
+#' @param method A string.  Passed to [moranajp::moranajp_all()]:
+#'   "mecab", "ginza", "sudachi_a", "sudachi_b" or "sudachi_c".
+#' @param bin_dir A string.  Directory of the analyser.
+#' @param iconv A string.  Encoding conversion of the analyser output,
+#'   for example "CP932_UTF-8" when MeCab was built for Shift-JIS.
+#'   Leave it empty for a UTF-8 dictionary.
+#' @param mecabrc A string.  Path of the `mecabrc` settings file.
+#'   `NULL` (the default) looks for it next to `bin_dir`.
+#'   `""` leaves the setting alone.
+#' @param ... Passed to [moranajp::moranajp_all()].
+#' @return A tibble of morphemes with a `sentence_id` column,
+#'   or `NULL` when the analysis could not be run.
+#' @examples
+#' \dontrun{
+#'   # needs 'moranajp' and a local analyser such as MeCab
+#'   sentences <- as_sentences(sample_text())
+#'   analyze_morphemes(sentences, bin_dir = "d:/pf/mecab/bin")
+#' }
+#'
+#' @export
+analyze_morphemes <- function(sentences, method = "mecab",
+                              bin_dir = "", iconv = "",
+                              mecabrc = NULL, ...){
+  if(is.data.frame(sentences)){
+    if(!"sentence" %in% colnames(sentences)){
+      stop("`sentences` has no column `sentence`.", call. = FALSE)
+    }
+    sentences <- sentences[["sentence"]]
+  }
+  sentences <- as.character(sentences)
+  if(!requireNamespace("moranajp", quietly = TRUE)){
+    message("Package 'moranajp' is not installed, ",
+            "so no morphological analysis was done.\n",
+            "  remotes::install_github(\"matutosi/moranajp\")")
+    return(invisible(NULL))
+  }
+  if(method == "mecab"){
+    rc <- if(is.null(mecabrc)) find_mecabrc(bin_dir) else mecabrc
+    if(nzchar(rc) && !nzchar(Sys.getenv("MECABRC"))){
+      # MeCab reads the path as it is, and only takes backslashes here
+      Sys.setenv(MECABRC = gsub("/", "\\\\", rc))
+      on.exit(Sys.unsetenv("MECABRC"), add = TRUE)
+    }
+  }
+  morphemes <- try(
+    moranajp::moranajp_all(tibble::tibble(text = sentences),
+      text_col = "text", method = method,
+      bin_dir = bin_dir, iconv = iconv, ...),
+    silent = TRUE)
+  if(inherits(morphemes, "try-error") || is.null(morphemes)){
+    message("Morphological analysis by '", method, "' failed, ",
+            "so NULL was returned.\n",
+            "  Check that '", method, "' is installed and that ",
+            "`bin_dir` points to it.")
+    return(invisible(NULL))
+  }
+  if(!nrow(morphemes)){
+    message("Morphological analysis by '", method, "' gave nothing back, ",
+            "so NULL was returned.")
+    return(invisible(NULL))
+  }
+  colnames(morphemes)[colnames(morphemes) == "text_id"] <- "sentence_id"
+  morphemes
+}
+
+#' Content words of a text
+#'
+#' Splits a text into sentences, runs a morphological analysis and picks
+#' the content words.  A shortcut for [as_sentences()],
+#' [analyze_morphemes()] and [pick_content_words()] in a row.
+#'
+#' @inheritParams analyze_morphemes
+#' @param text A character vector of lines, or a data.frame of sentences
+#'   as returned by [as_sentences()].
+#' @param pos A character vector of parts of speech to keep.
+#' @param skip_pos_1 A character vector of sub categories to drop.
+#' @param stop_words A character vector of words to drop.
+#' @return A tibble as returned by [pick_content_words()],
+#'   or `NULL` when the analysis could not be run.
+#'   Join it to the table of [as_sentences()] by `sentence_id`.
+#' @examples
+#' \dontrun{
+#'   # needs 'moranajp' and a local analyser such as MeCab
+#'   content_words(sample_text(), bin_dir = "d:/pf/mecab/bin")
+#' }
+#'
+#' @export
+content_words <- function(text, method = "mecab", bin_dir = "", iconv = "",
+                          pos        = content_pos(),
+                          skip_pos_1 = skipped_pos_1(),
+                          stop_words = stop_words_ja(), ...){
+  sentences <- if(is.data.frame(text)) text else as_sentences(text)
+  morphemes <- analyze_morphemes(sentences, method = method,
+                                 bin_dir = bin_dir, iconv = iconv, ...)
+  if(is.null(morphemes)) return(invisible(NULL))
+  pick_content_words(morphemes, pos = pos, skip_pos_1 = skip_pos_1,
+                     stop_words = stop_words)
+}
+
+#' Look for the settings file of MeCab
+#'
+#' Internal function for [analyze_morphemes()].
+#' MeCab keeps `mecabrc` in the `etc` directory beside `bin`, so the
+#' file is looked for there first.
+#'
+#' @param bin_dir A string.  Directory of the analyser.
+#' @return A string.  The path of the file, or `""` when it is not
+#'   found.
+#' @keywords internal
+find_mecabrc <- function(bin_dir){
+  if(!nzchar(bin_dir)) return("")
+  here <- c(file.path(dirname(bin_dir), "etc", "mecabrc"),
+            file.path(bin_dir, "mecabrc"),
+            file.path(bin_dir, "etc", "mecabrc"))
+  found <- here[file.exists(here)]
+  if(length(found) == 0) "" else found[[1]]
+}
+
+#' Take a column out of a morpheme table
+#'
+#' Internal function for [pick_content_words()].
+#' Looks for the English column name first, then for the Japanese one
+#' used by 'moranajp'.
+#'
+#' @param morphemes A data.frame of morphemes.
+#' @param name A string: "form", "pos", "pos_1" or "lemma".
+#' @return A vector, or `NULL` when the column is missing.
+#' @keywords internal
+morpheme_col <- function(morphemes, name){
+  jp <- c(form  = "\u8868\u5c64\u5f62",              # 表層形
+          pos   = "\u54c1\u8a5e",                    # 品詞
+          pos_1 = "\u54c1\u8a5e\u7d30\u5206\u985e1", # 品詞細分類1
+          lemma = "\u539f\u5f62")                    # 原形
+  cols <- colnames(morphemes)
+  if(name %in% cols)     return(morphemes[[name]])
+  if(jp[[name]] %in% cols) return(morphemes[[jp[[name]]]])
+  NULL
+}
