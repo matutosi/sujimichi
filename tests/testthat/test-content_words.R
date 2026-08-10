@@ -27,6 +27,35 @@ test_that("only content words are kept", {
   expect_equal(words$word, c("文章", "単語", "つながる"))
 })
 
+test_that("a morpheme of symbols only is dropped", {
+  # MeCab (ipadic) reads a symbol it does not know as 名詞・サ変接続,
+  # so the part of speech alone does not keep Markdown notation out.
+  morphemes <- tibble::tribble(
+    ~sentence_id, ~form, ~pos,     ~pos_1,      ~lemma,
+    1,            "**",  "名詞",    "サ変接続",   "*",
+    1,            "強調", "名詞",    "サ変接続",   "強調",
+    1,            "**",  "名詞",    "サ変接続",   "*",
+    1,            "(",   "名詞",    "サ変接続",   "*",
+    1,            "/",   "名詞",    "サ変接続",   "*",
+    1,            "：",  "名詞",    "サ変接続",   "*",
+    1,            "R",   "名詞",    "一般",      "*",
+    1,            "4",   "名詞",    "一般",      "*")
+  expect_equal(pick_content_words(morphemes)$word, c("強調", "R", "4"))
+})
+
+test_that("check_sentence_ids() says so when the numbering is short", {
+  # moranajp counts its "BP" markers; a swallowed marker merges two
+  # sentences and shifts every sentence_id after it
+  morphemes <- tibble::tibble(sentence_id = c(1, 1, 2, 2))
+  expect_message(check_sentence_ids(morphemes, 3), "may be shifted")
+  expect_silent(check_sentence_ids(morphemes, 2))
+})
+
+test_that("has_word_char() sees letters and digits of any script", {
+  expect_true(all(has_word_char(c("文章", "kanji", "R", "4", "第1章"))))
+  expect_false(any(has_word_char(c("**", "(", "/", "：", "…", "", NA))))
+})
+
 test_that("a word is represented by its lemma", {
   words <- pick_content_words(morphemes_en())
   # 「つながり」 is stored as 「つながる」

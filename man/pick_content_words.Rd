@@ -39,6 +39,12 @@ form (表層形) is used instead when the analyser does not know the
 lemma and writes \code{"*"}.
 }
 \details{
+A morpheme made only of punctuation and symbols is dropped, whatever
+its part of speech.  MeCab with ipadic reads a symbol it does not know
+(\verb{**}, \code{(}, \code{/}, \code{:} and the like) as 名詞・サ変接続, so filtering by
+part of speech alone lets Markdown notation through as if it were a
+content word.
+
 The table may use either the Japanese column names of 'moranajp'
 (表層形, 品詞, 品詞細分類1, 原形) or the English ones
 (\code{form}, \code{pos}, \code{pos_1}, \code{lemma}); see \code{\link[moranajp:moranajp_all]{moranajp::moranajp_all()}}.

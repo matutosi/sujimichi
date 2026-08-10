@@ -49,6 +49,12 @@ stop_words_ja <- function(){
 #' form (表層形) is used instead when the analyser does not know the
 #' lemma and writes `"*"`.
 #'
+#' A morpheme made only of punctuation and symbols is dropped, whatever
+#' its part of speech.  MeCab with ipadic reads a symbol it does not know
+#' (`**`, `(`, `/`, `:` and the like) as 名詞・サ変接続, so filtering by
+#' part of speech alone lets Markdown notation through as if it were a
+#' content word.
+#'
 #' The table may use either the Japanese column names of 'moranajp'
 #' (表層形, 品詞, 品詞細分類1, 原形) or the English ones
 #' (`form`, `pos`, `pos_1`, `lemma`); see [moranajp::moranajp_all()].
@@ -109,8 +115,26 @@ pick_content_words <- function(morphemes,
   keep <- out[["pos"]] %in% pos &
           !out[["pos_1"]] %in% skip_pos_1 &
           !out[["word"]] %in% stop_words &
-          nzchar(out[["word"]])
+          nzchar(out[["word"]]) &
+          has_word_char(out[["word"]])
   out[keep, , drop = FALSE]
+}
+
+#' Tell whether a word holds a letter or a digit
+#'
+#' Internal function for [pick_content_words()].
+#' A morpheme made only of punctuation and symbols carries no content,
+#' and is dropped even when the analyser labelled it a noun.
+#'
+#' @param word A character vector.
+#' @return A logical vector.
+#' @keywords internal
+has_word_char <- function(word){
+  word <- as.character(word)
+  # \p{L} letters (kanji, kana and latin alike), \p{N} digits
+  out  <- grepl("[\\p{L}\\p{N}]", word, perl = TRUE)
+  out[is.na(word)] <- FALSE
+  out
 }
 
 #' Run a morphological analysis on sentences
@@ -123,6 +147,15 @@ pick_content_words <- function(morphemes,
 #' When 'moranajp' is not installed, or when the analyser cannot be run,
 #' a message is shown and `NULL` is returned, so that a script does not
 #' stop on a machine without an analyser.
+#'
+#' 'moranajp' joins the sentences with the marker `"BP"` and finds them
+#' again by looking for a morpheme whose surface form is exactly `"BP"`.
+#' When a sentence begins or ends with a latin word, MeCab reads the
+#' marker and that word as one unknown noun (`"BPMeCab"`), the boundary
+#' is lost, and every sentence after it is numbered one too low.  Each
+#' sentence is therefore padded with a space, which keeps the marker a
+#' morpheme of its own.  The numbering is checked afterwards, and a
+#' message is shown when it still does not match.
 #'
 #' MeCab on Windows reads its settings from the path it was built with,
 #' and stops when the file is not there.  `analyze_morphemes()` therefore
@@ -176,8 +209,11 @@ analyze_morphemes <- function(sentences, method = "mecab",
       on.exit(Sys.unsetenv("MECABRC"), add = TRUE)
     }
   }
+  # a space on each side keeps moranajp's "BP" marker a morpheme of its
+  # own, so that the sentence boundaries survive the analysis
+  padded    <- paste0(" ", sentences, " ")
   morphemes <- try(
-    moranajp::moranajp_all(tibble::tibble(text = sentences),
+    moranajp::moranajp_all(tibble::tibble(text = padded),
       text_col = "text", method = method,
       bin_dir = bin_dir, iconv = iconv, ...),
     silent = TRUE)
@@ -194,7 +230,32 @@ analyze_morphemes <- function(sentences, method = "mecab",
     return(invisible(NULL))
   }
   colnames(morphemes)[colnames(morphemes) == "text_id"] <- "sentence_id"
+  check_sentence_ids(morphemes, length(sentences))
   morphemes
+}
+
+#' Warn when the sentence numbers do not match the sentences
+#'
+#' Internal function for [analyze_morphemes()].
+#' 'moranajp' numbers the sentences by counting its `"BP"` markers, and
+#' the count is short when a marker was swallowed by the word next to it.
+#' Everything after such a place would be linked to the wrong sentence,
+#' so it is better to say so than to return a table that looks fine.
+#'
+#' @param morphemes A data.frame with a `sentence_id` column.
+#' @param n An integer.  The number of sentences that were sent.
+#' @return `morphemes`, invisibly.
+#' @keywords internal
+check_sentence_ids <- function(morphemes, n){
+  if(!"sentence_id" %in% colnames(morphemes)) return(invisible(morphemes))
+  found <- length(unique(morphemes[["sentence_id"]]))
+  if(found != n){
+    message("The analyser gave back ", found, " sentences for ", n,
+            " that were sent, so the numbering may be shifted.\n",
+            "  Check the sentences that hold a word the analyser ",
+            "does not know.")
+  }
+  invisible(morphemes)
 }
 
 #' Content words of a text
