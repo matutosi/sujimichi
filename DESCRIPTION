@@ -10,7 +10,7 @@ Description: Reveals how a Japanese text holds together by linking each
     reported in the same way as dead code in a program. Morphological
     analysis is done locally through 'moranajp'.
 License: MIT + file LICENSE
-URL: https://github.com/matutosi/sujimichi
+URL: https://github.com/matutosi/sujimichi, https://matutosi.github.io/sujimichi/
 BugReports: https://github.com/matutosi/sujimichi/issues
 Depends: 
     R (>= 4.2.0)

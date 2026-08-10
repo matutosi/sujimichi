@@ -6,7 +6,7 @@
 各文を，共通の内容語をもつ先行文につなげて表示し，
 どの文ともつながらない文をデッドコードとして検出する．
 
-- リポジトリ: <https://github.com/matutosi/sujimichi> (未作成)
+- リポジトリ: <https://github.com/matutosi/sujimichi> (作成済み．`origin` 登録済み．まだ push していない)
 - 形態素解析は [moranajp](https://github.com/matutosi/moranajp) に任せる
   (ローカル実行．ネットワークに依存しない)
 - 構想と決定事項: [design.md](design.md)
@@ -20,6 +20,8 @@ R/            パッケージのソース
 tests/        testthat (edition 3)
 DESCRIPTION   メタデータ
 NAMESPACE     roxygen2 が生成する(手で編集しない)
+_pkgdown.yml  pkgdown サイトの設定
+docs/         pkgdown が生成するサイト(git・R CMD check とも対象外)
 .claude/      プロジェクト管理(このファイル・design.md)
 ```
 
@@ -36,6 +38,9 @@ NAMESPACE     roxygen2 が生成する(手で編集しない)
 - **README**: `README.Rmd` を編集し，`devtools::build_readme()` で
   `README.md` を生成する(`README.md` を直接編集しない)．
 - **R のバージョン**: 開発は R 4.5.1．`Depends: R (>= 4.2.0)`．
+- **サイト**: `pkgdown::build_site()` で `docs/` にローカル生成できる．
+  GitHub Pages への自動デプロイ(GitHub Actions)は，
+  リポジトリ `matutosi/sujimichi` を作ってから設定する(まだ未着手)．
 
 ## 進捗状況
 
@@ -134,6 +139,12 @@ links     <- connect_sentences(words, sentences)
   design.md の例が期待する「つながり／つながる の統合」は
   MeCab(ipadic)の実際の分割とは一致しない場合がある．
   実データでの見え方は，語の正規化を強めるか検討する材料として残す．
+- **pkgdown を `usethis::use_pkgdown()` で導入した**．
+  `_pkgdown.yml`(`url:` は DESCRIPTION の `URL:` と同じ
+  `https://matutosi.github.io/sujimichi/` に合わせた)を追加し，
+  `docs/` を `.gitignore`・`.Rbuildignore` の両方に登録済み．
+  `pkgdown::build_site()` でローカル生成できることを確認した．
+  GitHub Actions での自動デプロイは，リポジトリを作ってから設定する．
 
 ### TODO / 今後の候補
 
@@ -144,6 +155,9 @@ links     <- connect_sentences(words, sentences)
      孤立文は `is.na(prev_id)` で取れる．連結成分は別途
 - (未着手) Markdown をプレーンテキストに変換する関数
   ([design.md](design.md) の「未確認の論点」)
-- (未着手) GitHub リポジトリ `matutosi/sujimichi` を作って push する
+- (未着手) `matutosi/sujimichi` へ push する(リポジトリは `gh repo create`
+  で作成済み．`origin` にも登録済み)．push したら
+  `usethis::use_pkgdown_github_pages()` で GitHub Actions の
+  デプロイ設定を足す
 - (未着手) 表示方法の決定([design.md](design.md) の「提案(未決)」)
 - (未着手) 段階3のラベル付けの手段の決定(同上)
