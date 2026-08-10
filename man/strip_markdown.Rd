@@ -4,10 +4,14 @@
 \alias{strip_markdown}
 \title{Strip Markdown notation to plain text}
 \usage{
-strip_markdown(text)
+strip_markdown(text, list_end = sentence_marks()[[2]])
 }
 \arguments{
 \item{text}{A character vector, one element per line.}
+
+\item{list_end}{A string added to the end of a list item that does not
+end with a sentence terminator.  The fullwidth full stop (．) by
+default; \code{""} adds nothing.}
 }
 \value{
 A character vector of lines, with Markdown notation removed.
@@ -32,11 +36,22 @@ text is part of the prose while the address is not.  An image
 removed and the text between them is kept.  A lone \verb{_} is left alone,
 because it is more often part of a name such as \code{sentence_id} than a
 mark of emphasis.
+
+A list item is a sentence of its own, but it rarely ends with a full
+stop.  \code{\link[=split_sentences]{split_sentences()}} joins the lines of a paragraph, because a
+Japanese manuscript breaks a line in the middle of a sentence, so the
+items of a list would otherwise be run together into one long
+sentence.  A terminator is therefore added to an item that does not
+already end with one.  Pass \code{list_end = ""} to leave the items as
+they are.
 }
 \examples{
 strip_markdown(c("# 見出し", "",
                   "本文だ．", "",
                   "- 箇条書き1", "- 箇条書き2"))
 strip_markdown("**強調**した[リンク](https://example.com)．")
+
+# a list item becomes a sentence of its own
+strip_markdown(c("- 箇条書き1", "- 箇条書き2"))
 
 }

@@ -4,10 +4,14 @@
 \alias{strip_markdown_line}
 \title{Strip the Markdown notation of one line}
 \usage{
-strip_markdown_line(line)
+strip_markdown_line(line, list_end = "")
 }
 \arguments{
 \item{line}{A string.}
+
+\item{list_end}{A string added to the end of a list item that does not
+end with a sentence terminator.  The fullwidth full stop (．) by
+default; \code{""} adds nothing.}
 }
 \value{
 A string.
