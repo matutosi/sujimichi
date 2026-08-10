@@ -13,6 +13,7 @@ analyze_morphemes(
   bin_dir = "",
   iconv = "",
   mecabrc = NULL,
+  max_bytes = 8000,
   ...
 )
 ```
@@ -45,6 +46,11 @@ analyze_morphemes(
   A string. Path of the `mecabrc` settings file. `NULL` (the default)
   looks for it next to `bin_dir`. `""` leaves the setting alone.
 
+- max_bytes:
+
+  An integer. Largest number of bytes handed to the analyser at once.
+  Lower it when the analyser reports an overflow.
+
 - ...:
 
   Passed to `moranajp::moranajp_all()`.
@@ -68,6 +74,11 @@ and every sentence after it is numbered one too low. Each sentence is
 therefore padded with a space, which keeps the marker a morpheme of its
 own. The numbering is checked afterwards, and a message is shown when it
 still does not match.
+
+The sentences are handed over in chunks of at most `max_bytes` bytes,
+because MeCab reads a line into a buffer of a fixed size and splits the
+line when it does not fit, in the middle of a character. See
+[`sentence_chunks()`](https://matutosi.github.io/sujimichi/reference/sentence_chunks.md).
 
 MeCab on Windows reads its settings from the path it was built with, and
 stops when the file is not there. `analyze_morphemes()` therefore looks

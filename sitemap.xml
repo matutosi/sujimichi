@@ -5,6 +5,7 @@
 <url><loc>https://matutosi.github.io/sujimichi/authors.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/index.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/add_sentence_end.html</loc></url>
+<url><loc>https://matutosi.github.io/sujimichi/reference/analyze_chunk.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/analyze_morphemes.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/ansi_cyan.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/as_sentences.html</loc></url>
@@ -16,6 +17,7 @@
 <url><loc>https://matutosi.github.io/sujimichi/reference/content_words.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/dead_code.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/drop_blank_after.html</loc></url>
+<url><loc>https://matutosi.github.io/sujimichi/reference/drop_citations.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/drop_code_blocks.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/find_components.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/find_mecabrc.html</loc></url>
@@ -26,6 +28,7 @@
 <url><loc>https://matutosi.github.io/sujimichi/reference/morpheme_col.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/pick_content_words.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/sample_text.html</loc></url>
+<url><loc>https://matutosi.github.io/sujimichi/reference/sentence_chunks.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/sentence_marks.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/strip_code_spans.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/strip_markdown.html</loc></url>

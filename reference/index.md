@@ -19,6 +19,8 @@
 - [`dead_code()`](https://matutosi.github.io/sujimichi/reference/dead_code.md)
   [`broken_paragraphs()`](https://matutosi.github.io/sujimichi/reference/dead_code.md)
   : Find dead code: sentences that share no word with their paragraph
+- [`drop_citations()`](https://matutosi.github.io/sujimichi/reference/drop_citations.md)
+  : Remove the citations from a text
 - [`pick_content_words()`](https://matutosi.github.io/sujimichi/reference/pick_content_words.md)
   : Pick the content words out of a morpheme table
 - [`sample_text()`](https://matutosi.github.io/sujimichi/reference/sample_text.md)
