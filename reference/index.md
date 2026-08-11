@@ -23,12 +23,16 @@
   : Remove the citations from a text
 - [`pick_content_words()`](https://matutosi.github.io/sujimichi/reference/pick_content_words.md)
   : Pick the content words out of a morpheme table
+- [`plot_sujimichi()`](https://matutosi.github.io/sujimichi/reference/plot_sujimichi.md)
+  : Draw the sentences and their links with 'ggplot2'
 - [`sample_text()`](https://matutosi.github.io/sujimichi/reference/sample_text.md)
   : A short sample text
 - [`sentence_marks()`](https://matutosi.github.io/sujimichi/reference/sentence_marks.md)
   : Sentence terminators
 - [`strip_markdown()`](https://matutosi.github.io/sujimichi/reference/strip_markdown.md)
   : Strip Markdown notation to plain text
+- [`sujimichi_arcs()`](https://matutosi.github.io/sujimichi/reference/sujimichi_arcs.md)
+  : Points of the arcs that join the sentences
 - [`sujimichi_lines()`](https://matutosi.github.io/sujimichi/reference/sujimichi_lines.md)
   [`format_sujimichi()`](https://matutosi.github.io/sujimichi/reference/sujimichi_lines.md)
   [`print_sujimichi()`](https://matutosi.github.io/sujimichi/reference/sujimichi_lines.md)
