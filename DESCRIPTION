@@ -23,6 +23,7 @@ Imports:
     stringi,
     tibble
 Suggests:
+    ggplot2,
     moranajp,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
