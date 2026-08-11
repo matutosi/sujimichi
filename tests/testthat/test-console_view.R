@@ -17,6 +17,26 @@ sample_links <- function(){
   connect_sentences(words, sentences)
 }
 
+test_that("max_marks shows the other shared words as well", {
+  links     <- sample_links()
+  sentences <- as_sentences(sample_text())
+  one   <- format_sujimichi(links, sentences)
+  three <- format_sujimichi(links, sentences, max_marks = 3)
+  # 2文目は「つながり」で1文目につながり，「文章」も共有している
+  expect_true(grepl("(つながり)", one[[2]], fixed = TRUE))
+  expect_false(grepl("(文章)", one[[2]], fixed = TRUE))
+  expect_true(grepl("(つながり)", three[[2]], fixed = TRUE))
+  expect_true(grepl("(文章)", three[[2]], fixed = TRUE))
+})
+
+test_that("max_marks does not move the indent", {
+  links     <- sample_links()
+  sentences <- as_sentences(sample_text())
+  one   <- sujimichi_lines(links, sentences)$indent
+  three <- format_sujimichi(links, sentences, max_marks = 3)
+  expect_equal(nchar(sub("[^ ].*$", "", three)), one)
+})
+
 test_that("the mark is widened over a compound split by the analyser", {
   # MeCab(ipadic)は「畦畔」を「畦」と「畔」に割る
   sentences <- as_sentences(c("畦畔は水を保持する．", "畦畔には草原が成立する．"))

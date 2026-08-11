@@ -161,14 +161,90 @@ widen_to_compound <- function(words, sentence_id, position, word, text){
 }
 
 #' @rdname sujimichi_lines
+#' @param max_marks A number.  How many shared words to mark in one
+#'   line.  `1` (the default) marks the representative alone; `3`
+#'   follows the option in `design.md`.  The others are marked where
+#'   they stand after the representative, and the indent is worked out
+#'   from the representative as before.
 #' @export
 format_sujimichi <- function(links, sentences, words = NULL,
-                             wrap = c("(", ")")){
+                             wrap = c("(", ")"), max_marks = 1){
   lines <- sujimichi_lines(links, sentences, words = words, wrap = wrap)
   marked <- ifelse(nzchar(lines[["marked"]]),
                    paste0(wrap[[1]], lines[["marked"]], wrap[[2]]), "")
+  after <- mark_more(lines, links, words = words, wrap = wrap,
+                     max_marks = max_marks)
   paste0(strrep(" ", lines[["indent"]]),
-        lines[["before"]], marked, lines[["after"]])
+        lines[["before"]], marked, after)
+}
+
+#' Mark the other shared words of a line
+#'
+#' Internal function for [format_sujimichi()].
+#' `design.md` asks for an option to show up to three connections.  The
+#' representative settles the indent and is marked by
+#' [sujimichi_lines()]; the others are marked here, in the text that
+#' follows it, so that the alignment worked out from the text before the
+#' representative is left alone.  A word that is not written as its
+#' lemma says is passed over.
+#'
+#' The other words are widened over a split compound in the same way as
+#' the representative, and a word that the widening has already brought
+#' into an earlier mark is passed over, so that 「畦」 and 「畔」 give
+#' one 「(畦畔)」 rather than 「(畦)(畔)」.
+#'
+#' @param lines A data.frame as returned by [sujimichi_lines()].
+#' @param links A data.frame as returned by [connect_sentences()].
+#' @param words A data.frame as returned by [content_words()], or `NULL`.
+#' @param wrap A character vector of length 2.
+#' @param max_marks A number.
+#' @return A character vector, the `after` part of each line.
+#' @keywords internal
+mark_more <- function(lines, links, words = NULL, wrap = c("(", ")"),
+                      max_marks = 1){
+  after <- lines[["after"]]
+  if(!is.finite(max_marks) || max_marks <= 1) return(after)
+  more <- links[!links[["is_main"]] %in% TRUE &
+                !is.na(links[["prev_id"]]), , drop = FALSE]
+  if(nrow(more) == 0) return(after)
+  more <- more[order(more[["sentence_id"]], more[["position"]]), ,
+               drop = FALSE]
+  for(k in seq_along(after)){
+    take <- which(more[["sentence_id"]] %in% lines[["sentence_id"]][[k]])
+    if(!length(take)) next
+    shown <- lines[["marked"]][[k]]
+    shown <- shown[nzchar(shown)]
+    for(i in take){
+      if(length(shown) >= max_marks) break
+      word <- as.character(more[["word"]][[i]])
+      if(is.null(words)){
+        wide <- word
+      }else{
+        wide <- widen_to_compound(words, more[["sentence_id"]][[i]],
+                                  more[["position"]][[i]], word, after[[k]])
+      }
+      if(any(vapply(shown, overlaps, logical(1), b = wide))) next
+      at <- regexpr(wide, after[[k]], fixed = TRUE)
+      if(at < 0) next
+      after[[k]] <- paste0(substr(after[[k]], 1, at - 1),
+                           wrap[[1]], wide, wrap[[2]],
+                           substr(after[[k]], at + nchar(wide),
+                                  nchar(after[[k]])))
+      shown <- c(shown, wide)
+    }
+  }
+  after
+}
+
+#' Tell whether one string holds the other
+#'
+#' Internal function for [mark_more()].
+#'
+#' @param a,b Strings.
+#' @return A logical.
+#' @keywords internal
+overlaps <- function(a, b){
+  grepl(a, b, fixed = TRUE) || grepl(b, a, fixed = TRUE)
 }
 
 #' @rdname sujimichi_lines
@@ -181,16 +257,18 @@ format_sujimichi <- function(links, sentences, words = NULL,
 #'   `format_sujimichi()`, invisibly.
 #' @export
 print_sujimichi <- function(links, sentences, words = NULL,
-                            wrap = c("(", ")"),
+                            wrap = c("(", ")"), max_marks = 1,
                             color = interactive(), file = ""){
   lines <- sujimichi_lines(links, sentences, words = words, wrap = wrap)
   marked <- ifelse(!nzchar(lines[["marked"]]), "",
                    paste0(wrap[[1]], lines[["marked"]], wrap[[2]]))
+  after <- mark_more(lines, links, words = words, wrap = wrap,
+                     max_marks = max_marks)
   shown <- if(color) vapply(marked, ansi_cyan, character(1)) else marked
   cat(paste0(strrep(" ", lines[["indent"]]),
-            lines[["before"]], shown, lines[["after"]]), sep = "\n", file = file)
+            lines[["before"]], shown, after), sep = "\n", file = file)
   invisible(paste0(strrep(" ", lines[["indent"]]),
-                   lines[["before"]], marked, lines[["after"]]))
+                   lines[["before"]], marked, after))
 }
 
 #' Colour a string cyan with ANSI escapes

@@ -8,13 +8,20 @@
 \usage{
 sujimichi_lines(links, sentences, words = NULL, wrap = c("(", ")"))
 
-format_sujimichi(links, sentences, words = NULL, wrap = c("(", ")"))
+format_sujimichi(
+  links,
+  sentences,
+  words = NULL,
+  wrap = c("(", ")"),
+  max_marks = 1
+)
 
 print_sujimichi(
   links,
   sentences,
   words = NULL,
   wrap = c("(", ")"),
+  max_marks = 1,
   color = interactive(),
   file = ""
 )
@@ -30,6 +37,12 @@ as returned by \code{\link[=as_sentences]{as_sentences()}}.}
 
 \item{wrap}{A character vector of length 2: the marks put around
 the shared word.}
+
+\item{max_marks}{A number.  How many shared words to mark in one
+line.  \code{1} (the default) marks the representative alone; \code{3}
+follows the option in \code{design.md}.  The others are marked where
+they stand after the representative, and the indent is worked out
+from the representative as before.}
 
 \item{color}{A logical.  Colour the marked word with ANSI escapes.
 Defaults to \code{\link[=interactive]{interactive()}}, so example runs and \verb{R CMD check}
