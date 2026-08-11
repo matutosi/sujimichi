@@ -29,6 +29,12 @@
 
 (2026-08-11 更新)
 
+- **HTML 表示を足した**(design.md の「提案(未決)」の3番目)．
+  `html_sujimichi()` が `<pre>` の中に `<span>` で色を付けた HTML を返す．
+  R Markdown / Quarto のチャンクで `results = "asis"` にすれば貼れる
+  (`print.sujimichi_html()` があるので `cat()` は不要)．
+  **依存は増えていない**(文字列を組み立てるだけ)．
+  これで design.md の表示案3つ(コンソール・ggplot2・HTML)がすべて揃った．
 - **表示方法を決めて ggplot2 の図を足した**(design.md の「提案(未決)」の2番目．
   「文を行に並べ，共通語を弧で結ぶ」)．`plot_sujimichi()` が
   文を行に並べ，つながりを弧で描き，**孤立文を赤で示す**．
@@ -171,6 +177,15 @@
   `mark_more()` 代表以外の共有語にも印を付ける(`max_marks`)．
   `overlaps()` 片方が他方を含むか
 
+`R/html.R` (手順4の HTML)
+
+- `html_sujimichi()` `<pre>` の中に `<span>` で色を付けた HTML を返す．
+  共有語は `.sujimichi-word`，孤立文は `.sujimichi-dead`．
+  `css = TRUE`(既定)で `<style>` も付ける
+- `print.sujimichi_html()` そのまま出力する
+  (R Markdown の `results = "asis"` 用)
+- (内部) `sujimichi_css()` `escape_html()`
+
 `R/plot.R` (手順4の図)
 
 - `sujimichi_arcs()` 弧の座標をデータで返す(`link_id / sentence_id /
@@ -238,6 +253,14 @@ broken_paragraphs(dead)
   `is.na(prev_id)` を見るだけで済む．
   ただし**語ごとに先行文が無いだけなら行は作らない**
   (その文に他のつながりがあるなら，初出の語は行にしない)．
+- **HTML は `<pre>` で組む**．字下げは半角空白で表しているので，
+  折り返しや空白の詰めが起きると意味が消える．
+  全角幅は `stri_width()` で2桁と数えているので，
+  **全角を2桁で描く等幅フォント**であることが前提(その旨をヘルプに書いた)．
+- **印の位置は制御文字で仮置きしてから置換する**(`html_sujimichi()`)．
+  `<span>` を先に入れるとエスケープでタグまで実体参照になる．
+  `sujimichi_lines()`・`mark_more()` の `wrap` に制御文字を渡し，
+  エスケープしたあとでタグに置き換える．
 - **図は縦横比を固定する**(`plot_sujimichi()` の `ratio`，既定1)．
   固定しないと弧がパネル幅いっぱいに引き伸ばされ，
   **距離1のつながりと距離7のつながりが見分けられない**(実データで確認)．
@@ -394,8 +417,6 @@ broken_paragraphs(dead)
 
 ### TODO / 今後の候補
 
-- (未着手) HTML 表示(`<span>` に色)．design.md の3番目．
-  R Markdown / Quarto に貼る用．依存は増えないので足しやすい
 - (未着手) 段階3のラベル付けの手段の決定(同上)
 - (未着手) **辞書を Sudachi に替えられるようにする**(複合語の割れの根治)．
   `D:\pf\sudachi` に導入済みで，直接動かすと **`畦畔` は1語**，
