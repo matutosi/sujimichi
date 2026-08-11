@@ -49,13 +49,20 @@ console display sketched in <code>design.md</code>:</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">sujimichi_lines</span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span>, words <span class="op">=</span> <span class="cn">NULL</span>, wrap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"("</span>, <span class="st">")"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">format_sujimichi</span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span>, words <span class="op">=</span> <span class="cn">NULL</span>, wrap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"("</span>, <span class="st">")"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">format_sujimichi</span><span class="op">(</span></span>
+<span>  <span class="va">links</span>,</span>
+<span>  <span class="va">sentences</span>,</span>
+<span>  words <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  wrap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"("</span>, <span class="st">")"</span><span class="op">)</span>,</span>
+<span>  max_marks <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">print_sujimichi</span><span class="op">(</span></span>
 <span>  <span class="va">links</span>,</span>
 <span>  <span class="va">sentences</span>,</span>
 <span>  words <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  wrap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"("</span>, <span class="st">")"</span><span class="op">)</span>,</span>
+<span>  max_marks <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  color <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  file <span class="op">=</span> <span class="st">""</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -82,6 +89,14 @@ as returned by <code><a href="as_sentences.html">as_sentences()</a></code>.</p><
 <dt id="arg-wrap">wrap<a class="anchor" aria-label="anchor" href="#arg-wrap"></a></dt>
 <dd><p>A character vector of length 2: the marks put around
 the shared word.</p></dd>
+
+
+<dt id="arg-max-marks">max_marks<a class="anchor" aria-label="anchor" href="#arg-max-marks"></a></dt>
+<dd><p>A number.  How many shared words to mark in one
+line.  <code>1</code> (the default) marks the representative alone; <code>3</code>
+follows the option in <code>design.md</code>.  The others are marked where
+they stand after the representative, and the indent is worked out
+from the representative as before.</p></dd>
 
 
 <dt id="arg-color">color<a class="anchor" aria-label="anchor" href="#arg-color"></a></dt>

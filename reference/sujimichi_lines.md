@@ -10,13 +10,20 @@ display sketched in `design.md`:
 ``` r
 sujimichi_lines(links, sentences, words = NULL, wrap = c("(", ")"))
 
-format_sujimichi(links, sentences, words = NULL, wrap = c("(", ")"))
+format_sujimichi(
+  links,
+  sentences,
+  words = NULL,
+  wrap = c("(", ")"),
+  max_marks = 1
+)
 
 print_sujimichi(
   links,
   sentences,
   words = NULL,
   wrap = c("(", ")"),
+  max_marks = 1,
   color = interactive(),
   file = ""
 )
@@ -43,6 +50,13 @@ print_sujimichi(
 - wrap:
 
   A character vector of length 2: the marks put around the shared word.
+
+- max_marks:
+
+  A number. How many shared words to mark in one line. `1` (the default)
+  marks the representative alone; `3` follows the option in `design.md`.
+  The others are marked where they stand after the representative, and
+  the indent is worked out from the representative as before.
 
 - color:
 

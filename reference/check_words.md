@@ -16,6 +16,8 @@ keep_first_links(linked, max_links = Inf)
 
 add_lonely_rows(linked, all_ids)
 
+link_weight(distance, how = "inverse")
+
 count_referred(linked)
 ```
 
@@ -55,11 +57,22 @@ count_referred(linked)
 
   A number. The largest number of links kept for one sentence, counted
   from the front of the sentence. `Inf` (the default) keeps them all;
-  `3` follows the option in `design.md`.
+  `3` follows the option in `design.md`. Over a review paper of 461
+  sentences a sentence had five links in the middle of the range, and
+  cutting at three threw away half of them, which is why the default
+  keeps them all and the cut is left to the display.
 
 - all_ids:
 
   A vector of every sentence number.
+
+- distance:
+
+  A numeric vector.
+
+- how:
+
+  A string: `"inverse"` or `"distance"`.
 
 ## Value
 
@@ -80,6 +93,8 @@ A data.frame, or a vector for `count_referred()`.
   the representative.
 
 - `add_lonely_rows()` adds an empty row for a sentence without a link.
+
+- `link_weight()` turns the distance into a weight.
 
 - `count_referred()` counts, for each sentence, the later sentences that
   look back at it.

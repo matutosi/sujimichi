@@ -48,6 +48,8 @@
 <span></span>
 <span><span class="fu">add_lonely_rows</span><span class="op">(</span><span class="va">linked</span>, <span class="va">all_ids</span><span class="op">)</span></span>
 <span></span>
+<span><span class="fu">link_weight</span><span class="op">(</span><span class="va">distance</span>, how <span class="op">=</span> <span class="st">"inverse"</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu">count_referred</span><span class="op">(</span><span class="va">linked</span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -86,11 +88,23 @@ earlier sentence that holds the word.</p></dd>
 <dt id="arg-max-links">max_links<a class="anchor" aria-label="anchor" href="#arg-max-links"></a></dt>
 <dd><p>A number.  The largest number of links kept for one
 sentence, counted from the front of the sentence.  <code>Inf</code> (the
-default) keeps them all; <code>3</code> follows the option in <code>design.md</code>.</p></dd>
+default) keeps them all; <code>3</code> follows the option in <code>design.md</code>.
+Over a review paper of 461 sentences a sentence had five links in
+the middle of the range, and cutting at three threw away half of
+them, which is why the default keeps them all and the cut is left
+to the display.</p></dd>
 
 
 <dt id="arg-all-ids">all_ids<a class="anchor" aria-label="anchor" href="#arg-all-ids"></a></dt>
 <dd><p>A vector of every sentence number.</p></dd>
+
+
+<dt id="arg-distance">distance<a class="anchor" aria-label="anchor" href="#arg-distance"></a></dt>
+<dd><p>A numeric vector.</p></dd>
+
+
+<dt id="arg-how">how<a class="anchor" aria-label="anchor" href="#arg-how"></a></dt>
+<dd><p>A string: <code>"inverse"</code> or <code>"distance"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -109,6 +123,7 @@ paragraph each belongs to.</p></li>
 counted from the front of the sentence, and marks the first of them
 as the representative.</p></li>
 <li><p><code>add_lonely_rows()</code> adds an empty row for a sentence without a link.</p></li>
+<li><p><code>link_weight()</code> turns the distance into a weight.</p></li>
 <li><p><code>count_referred()</code> counts, for each sentence, the later sentences
 that look back at it.</p></li>
 </ul></div>
