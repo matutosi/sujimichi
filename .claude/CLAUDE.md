@@ -29,6 +29,19 @@
 
 (2026-08-11 更新)
 
+- **「近さの重み」と「最大3つ」を実データで決めた**(design.md が
+  「実データを見てから決める」としていた項目)．
+  - **重みは距離の逆数(`1/distance`)を既定にした**．`connect_sentences()` に
+    `weight` 列と `weight = c("inverse", "distance")` 引数を足した．
+    総説では**つながりの69%が距離1**(直前の文)なので，逆数だと大半が1に近くなり，
+    遠くを指すつながりだけが小さい値で目立つ．
+  - **`max_links` の既定は `Inf` のままにした**．総説では1文あたりの
+    つながりが中央値5・最大18で，**3で打ち切るとつながりの半分(48%)が消える**．
+    コアは全部返し，絞るのは表示側という現状の切り分けが正しかった．
+  - **表示側に `max_marks` を足した**(`format_sujimichi()`・`print_sujimichi()`．
+    既定1，`3` で design.md の「最大3つ」)．
+    それまで `max_links = 3` にしても表示は代表1つしか描かず，
+    「最大3つまで示せる」が実際には見えていなかった．
 - **複合語の割れを「表示側だけ」直した**(`sujimichi_lines()` などの
   `words` 引数)．印を付ける語が名詞なら，隣接する名詞まで含めて括る．
   `(畦)畔` → `(畦畔)`，`(水田)畦畔` → `(水田畦畔)`，`(景観)` → `(農村景観)`．
@@ -133,9 +146,11 @@
 
 - `connect_sentences()` 各文を，同じ内容語をもつ先行文につなぐ．
   返す表は `sentence_id / word / position / prev_id / distance /
-  is_main / referred`
+  weight / is_main / referred`．`weight` は距離の重み
+  (既定は逆数．`weight = "distance"` で距離そのもの)
 - (内部) `check_words()` `sentence_ids()` `link_rows()`
-  `keep_first_links()` `add_lonely_rows()` `count_referred()`
+  `keep_first_links()` `add_lonely_rows()` `link_weight()`
+  `count_referred()`
 
 `R/console_view.R` (手順4)
 
@@ -146,7 +161,9 @@
 - `print_sujimichi()` 端末に出力する．既定で ANSI 色付け
   (`color = interactive()`)
 - (内部) `ansi_cyan()`．`widen_to_compound()` 印を隣接する名詞まで広げる
-  (解析器が割った複合語をつなぎ直す．本文に無い並びになったら元の語に戻す)
+  (解析器が割った複合語をつなぎ直す．本文に無い並びになったら元の語に戻す)．
+  `mark_more()` 代表以外の共有語にも印を付ける(`max_marks`)．
+  `overlaps()` 片方が他方を含むか
 
 `R/dead_code.R` (手順5)
 
@@ -179,7 +196,9 @@
 sentences <- as_sentences(text)
 words     <- content_words(sentences, bin_dir = "d:/pf/mecab/bin")
 links     <- connect_sentences(words, sentences)
-print_sujimichi(links, sentences, words)   # words を渡すと印が複合語に広がる
+print_sujimichi(links, sentences, words, max_marks = 3)
+#   words   を渡すと印が複合語に広がる
+#   max_marks で1行に付ける印の数(既定1)
 dead      <- dead_code(links, sentences)
 broken_paragraphs(dead)
 ```
@@ -204,6 +223,19 @@ broken_paragraphs(dead)
   `is.na(prev_id)` を見るだけで済む．
   ただし**語ごとに先行文が無いだけなら行は作らない**
   (その文に他のつながりがあるなら，初出の語は行にしない)．
+- **重みは距離の逆数を既定にした**(`weight = "inverse"`)．design.md は
+  「距離そのもの，または距離の逆数．どちらを使うかはオプション」としていた．
+  逆数を既定にしたのは，**大きいほど良いに揃う**ので段階3の
+  「構造化の程度」の指標に足し合わせやすいため．実データ(総説)では
+  つながりの69%が距離1なので，逆数だと大半が1で，遠くを指すつながりだけが目立つ．
+- **`max_links` の既定は `Inf` のまま，絞るのは表示側**(`max_marks`)．
+  総説では1文あたりのつながりが中央値5・最大18あり，
+  3で打ち切ると**つながりの半分が消える**(983/2039)．
+  一方，設計文書(design.md)では中央値2で83%が3つ以下に収まる．
+  文書の性質で最適値が違うので，コアは全部返して表示で選ばせる．
+- **追加の印も複合語に広げ，重なったら飛ばす**(`mark_more()`)．
+  代表だけ広げると `(畦)(畔)`・`(辺)(縁)部` のような並びになる．
+  広げた結果が既に出した印と重なる語は飛ばして `(畦畔)`・`(辺縁)部` にする．
 - **既定は最も近い先行文だけ**(`nearest = TRUE`)．
   design.md の「段落内のすべての先行文」は `nearest = FALSE` で得られる．
   「近い文とのつながりほど良い」を既定に採った．
@@ -351,8 +383,5 @@ broken_paragraphs(dead)
   「つながり」(名詞・一般)・「つながる」(動詞・自立)・「つなげる」は
   別の3語になり，design.md の例が期待する統合は起きない．
   上の複合語の件とあわせて方針を決める．
-- (未着手) 「近さの重み」と「最大3つ」の調整．
-  design.md が「実データを見てから決める」としていた項目で，
-  データが揃ったので決められる．
 - (未着手) 書籍の原稿や申請書にもかけてみる
   (総説1本では，分野や文体による違いが分からない)．
