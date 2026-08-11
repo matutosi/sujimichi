@@ -20,9 +20,11 @@
 <url><loc>https://matutosi.github.io/sujimichi/reference/drop_blank_after.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/drop_citations.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/drop_code_blocks.html</loc></url>
+<url><loc>https://matutosi.github.io/sujimichi/reference/escape_html.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/find_components.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/find_mecabrc.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/has_word_char.html</loc></url>
+<url><loc>https://matutosi.github.io/sujimichi/reference/html_sujimichi.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/index.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/join_lines.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/list_item_ends.html</loc></url>
@@ -39,6 +41,7 @@
 <url><loc>https://matutosi.github.io/sujimichi/reference/strip_markdown.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/strip_markdown_line.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/sujimichi_arcs.html</loc></url>
+<url><loc>https://matutosi.github.io/sujimichi/reference/sujimichi_css.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/sujimichi_lines.html</loc></url>
 <url><loc>https://matutosi.github.io/sujimichi/reference/widen_to_compound.html</loc></url>
 </urlset>

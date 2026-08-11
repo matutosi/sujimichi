@@ -21,6 +21,9 @@
   : Find dead code: sentences that share no word with their paragraph
 - [`drop_citations()`](https://matutosi.github.io/sujimichi/reference/drop_citations.md)
   : Remove the citations from a text
+- [`html_sujimichi()`](https://matutosi.github.io/sujimichi/reference/html_sujimichi.md)
+  [`print(`*`<sujimichi_html>`*`)`](https://matutosi.github.io/sujimichi/reference/html_sujimichi.md)
+  : Write the sentences and their links as HTML
 - [`pick_content_words()`](https://matutosi.github.io/sujimichi/reference/pick_content_words.md)
   : Pick the content words out of a morpheme table
 - [`plot_sujimichi()`](https://matutosi.github.io/sujimichi/reference/plot_sujimichi.md)
