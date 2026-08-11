@@ -4,7 +4,13 @@
 \alias{connect_sentences}
 \title{Connect each sentence to the earlier sentences it shares a word with}
 \usage{
-connect_sentences(words, sentences = NULL, nearest = TRUE, max_links = Inf)
+connect_sentences(
+  words,
+  sentences = NULL,
+  nearest = TRUE,
+  max_links = Inf,
+  weight = c("inverse", "distance")
+)
 }
 \arguments{
 \item{words}{A data.frame of content words with columns
@@ -22,7 +28,17 @@ earlier sentence that holds the word.}
 
 \item{max_links}{A number.  The largest number of links kept for one
 sentence, counted from the front of the sentence.  \code{Inf} (the
-default) keeps them all; \code{3} follows the option in \code{design.md}.}
+default) keeps them all; \code{3} follows the option in \code{design.md}.
+Over a review paper of 461 sentences a sentence had five links in
+the middle of the range, and cutting at three threw away half of
+them, which is why the default keeps them all and the cut is left
+to the display.}
+
+\item{weight}{One of \code{"inverse"} (the default) or \code{"distance"},
+the two ways \code{design.md} leaves open for turning the distance into
+a weight.  \code{"inverse"} gives \code{1 / distance}, so that a nearer
+sentence weighs more and the number reads the same way round as
+the other measures; \code{"distance"} gives the distance itself.}
 }
 \value{
 A tibble with one row per link and these columns.
@@ -34,6 +50,10 @@ shares no word.
 all morphemes.  The smaller, the closer to the front.
 \item \code{prev_id}: the earlier sentence that holds the same word.
 \item \code{distance}: \code{sentence_id - prev_id}.  The smaller, the closer.
+\item \code{weight}: the distance turned into a weight, see \code{weight}.
+Over a review paper 69 per cent of the links ran to the sentence
+right before, so the weight is close to 1 most of the time and a
+link reaching further back stands out.
 \item \code{is_main}: whether the row is the representative of its sentence.
 \item \code{referred}: how many later sentences look back at \code{sentence_id}.
 A high count marks a sentence that the rest of the paragraph

@@ -6,6 +6,7 @@
 \alias{link_rows}
 \alias{keep_first_links}
 \alias{add_lonely_rows}
+\alias{link_weight}
 \alias{count_referred}
 \title{Steps of connect_sentences()}
 \usage{
@@ -18,6 +19,8 @@ link_rows(words, para, nearest = TRUE)
 keep_first_links(linked, max_links = Inf)
 
 add_lonely_rows(linked, all_ids)
+
+link_weight(distance, how = "inverse")
 
 count_referred(linked)
 }
@@ -42,9 +45,17 @@ earlier sentence that holds the word.}
 
 \item{max_links}{A number.  The largest number of links kept for one
 sentence, counted from the front of the sentence.  \code{Inf} (the
-default) keeps them all; \code{3} follows the option in \code{design.md}.}
+default) keeps them all; \code{3} follows the option in \code{design.md}.
+Over a review paper of 461 sentences a sentence had five links in
+the middle of the range, and cutting at three threw away half of
+them, which is why the default keeps them all and the cut is left
+to the display.}
 
 \item{all_ids}{A vector of every sentence number.}
+
+\item{distance}{A numeric vector.}
+
+\item{how}{A string: \code{"inverse"} or \code{"distance"}.}
 }
 \value{
 A data.frame, or a vector for \code{count_referred()}.
@@ -63,6 +74,7 @@ paragraph each belongs to.
 counted from the front of the sentence, and marks the first of them
 as the representative.
 \item \code{add_lonely_rows()} adds an empty row for a sentence without a link.
+\item \code{link_weight()} turns the distance into a weight.
 \item \code{count_referred()} counts, for each sentence, the later sentences
 that look back at it.
 }

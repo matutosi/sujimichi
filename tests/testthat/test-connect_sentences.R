@@ -21,11 +21,29 @@ sample_ids <- function(n = 3){
   data.frame(paragraph_id = rep(1, n), sentence_id = seq_len(n))
 }
 
+test_that("the weight turns the distance round by default", {
+  links <- connect_sentences(sample_words(), sample_ids())
+  has   <- !is.na(links$distance)
+  expect_equal(links$weight[has], 1 / links$distance[has])
+  expect_true(all(is.na(links$weight[!has])))
+})
+
+test_that("weight = 'distance' gives the distance itself", {
+  links <- connect_sentences(sample_words(), sample_ids(),
+                             weight = "distance")
+  expect_equal(links$weight, as.numeric(links$distance))
+})
+
+test_that("an unknown weight is refused", {
+  expect_error(connect_sentences(sample_words(), sample_ids(),
+                                 weight = "near"), "arg")
+})
+
 test_that("a sentence is linked to the earlier sentence sharing a word", {
   links <- connect_sentences(sample_words(), sample_ids())
   expect_s3_class(links, "tbl_df")
-  expect_named(links, c("sentence_id", "word", "position",
-                        "prev_id", "distance", "is_main", "referred"))
+  expect_named(links, c("sentence_id", "word", "position", "prev_id",
+                        "distance", "weight", "is_main", "referred"))
   # 構造 and 明示 appear for the first time, so they make no row
   second <- links[links$sentence_id == 2, ]
   expect_equal(second$word, c("つながる", "文章"))
