@@ -61,6 +61,8 @@ Japanese text. <https://github.com/matutosi/sujimichi> .
 - [`html_sujimichi()`](https://matutosi.github.io/sujimichi/reference/html_sujimichi.md)
   [`print(`*`<sujimichi_html>`*`)`](https://matutosi.github.io/sujimichi/reference/html_sujimichi.md)
   : Write the sentences and their links as HTML
+- [`neko_words`](https://matutosi.github.io/sujimichi/reference/neko_words.md)
+  : Content words of the opening of 『吾輩は猫である』
 - [`pick_content_words()`](https://matutosi.github.io/sujimichi/reference/pick_content_words.md)
   : Pick the content words out of a morpheme table
 - [`plot_sujimichi()`](https://matutosi.github.io/sujimichi/reference/plot_sujimichi.md)
