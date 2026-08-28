@@ -53,7 +53,83 @@
 <div class="sourceCode" id="cb1"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>文章とは，単語のつながりである．</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>               (つながり)があるおかげで，文章の構造を明示できる．</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>                                              (構造)がわかれば，文章を理解しやすくなる．</span></code></pre></div>
-<p><strong>このパッケージは作りはじめたところで，まだ使える関数はありません．</strong></p>
+<div class="section level2">
+<h2 id="状態-status">状態, Status<a class="anchor" aria-label="anchor" href="#%E7%8A%B6%E6%85%8B-status"></a>
+</h2>
+<p><strong>主な機能はひととおり動きます</strong> (文の分割・内容語の取り出し・つながりの計算・ コンソール表示・ggplot2 の図・HTML 出力・デッドコード検出)． API はまだ変わることがあります．</p>
+</div>
+<div class="section level2">
+<h2 id="installation-インストール">Installation, インストール<a class="anchor" aria-label="anchor" href="#installation-%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB"></a>
+</h2>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw">if</span><span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://remotes.r-lib.org" class="external-link">"remotes"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"matutosi/sujimichi"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="使い方-usage">使い方, Usage<a class="anchor" aria-label="anchor" href="#%E4%BD%BF%E3%81%84%E6%96%B9-usage"></a>
+</h2>
+<p>原稿を渡すと，文に切り，形態素解析にかけ，内容語でつなぎます． 形態素解析には <a href="https://github.com/matutosi/moranajp" class="external-link">moranajp</a> と MeCab が要ります．</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/matutosi/sujimichi" class="external-link">sujimichi</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">text</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="st">"manuscript.md"</span><span class="op">)</span></span>
+<span><span class="va">text</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/drop_citations.html">drop_citations</a></span><span class="op">(</span><span class="fu"><a href="reference/strip_markdown.html">strip_markdown</a></span><span class="op">(</span><span class="va">text</span><span class="op">)</span><span class="op">)</span>  <span class="co"># 引用文献と Markdown の記号を外す</span></span>
+<span></span>
+<span><span class="va">sentences</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/as_sentences.html">as_sentences</a></span><span class="op">(</span><span class="va">text</span><span class="op">)</span>               <span class="co"># 段落と文に切る</span></span>
+<span><span class="va">words</span>     <span class="op">&lt;-</span> <span class="fu"><a href="reference/content_words.html">content_words</a></span><span class="op">(</span><span class="va">text</span><span class="op">)</span>              <span class="co"># 形態素解析して内容語を取り出す</span></span>
+<span><span class="va">links</span>     <span class="op">&lt;-</span> <span class="fu"><a href="reference/connect_sentences.html">connect_sentences</a></span><span class="op">(</span><span class="va">words</span>, <span class="va">sentences</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/sujimichi_lines.html">print_sujimichi</a></span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span><span class="op">)</span>             <span class="co"># コンソールに表示する</span></span>
+<span><span class="fu"><a href="reference/plot_sujimichi.html">plot_sujimichi</a></span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span><span class="op">)</span>              <span class="co"># ggplot2 でアーク図を描く</span></span>
+<span><span class="fu"><a href="reference/dead_code.html">dead_code</a></span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span><span class="op">)</span>                   <span class="co"># どこともつながらない文を挙げる</span></span></code></pre></div>
+<p>形態素解析器が無くても，内容語の表を自分で渡せば動きます． 上の例の3文を手で並べると，つながりはこう表示されます．</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/matutosi/sujimichi" class="external-link">sujimichi</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">sentences</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/as_sentences.html">as_sentences</a></span><span class="op">(</span><span class="fu"><a href="reference/sample_text.html">sample_text</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">words</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tribble.html" class="external-link">tribble</a></span><span class="op">(</span></span>
+<span>  <span class="op">~</span><span class="va">sentence_id</span>, <span class="op">~</span><span class="va">position</span>, <span class="op">~</span><span class="va">word</span>,</span>
+<span>  <span class="fl">1</span>,            <span class="fl">1</span>,         <span class="st">"文章"</span>,</span>
+<span>  <span class="fl">1</span>,            <span class="fl">7</span>,         <span class="st">"つながり"</span>,</span>
+<span>  <span class="fl">2</span>,            <span class="fl">1</span>,         <span class="st">"つながり"</span>,</span>
+<span>  <span class="fl">2</span>,            <span class="fl">11</span>,        <span class="st">"構造"</span>,</span>
+<span>  <span class="fl">3</span>,            <span class="fl">1</span>,         <span class="st">"構造"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">links</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/connect_sentences.html">connect_sentences</a></span><span class="op">(</span><span class="va">words</span>, <span class="va">sentences</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/sujimichi_lines.html">print_sujimichi</a></span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 文章とは，単語のつながりである．</span></span>
+<span><span class="co">#&gt;                (つながり)があるおかげで，文章の構造を明示できる．</span></span>
+<span><span class="co">#&gt;                                               (構造)がわかれば，文章を理解しやすくなる．</span></span></code></pre></div>
+<p>つながりの表には，どの文がどの文を見ているか，その距離と重み， その文が後ろの文からいくつ参照されているか (<code>referred</code>) が入ります．</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">links</span></span>
+<span><span class="co">#&gt; # A tibble: 3 × 8</span></span>
+<span><span class="co">#&gt;   sentence_id word     position prev_id distance weight is_main referred</span></span>
+<span><span class="co">#&gt;         &lt;dbl&gt; &lt;chr&gt;       &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt; &lt;lgl&gt;      &lt;int&gt;</span></span>
+<span><span class="co">#&gt; 1           1 &lt;NA&gt;           NA      NA       NA     NA TRUE           1</span></span>
+<span><span class="co">#&gt; 2           2 つながり        1       1        1      1 TRUE           1</span></span>
+<span><span class="co">#&gt; 3           3 構造            1       2        1      1 TRUE           0</span></span></code></pre></div>
+<p>まとまった量で試すには，同梱の <code>neko_words</code> (『吾輩は猫である』の冒頭 148 文) が使えます．</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">links</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/connect_sentences.html">connect_sentences</a></span><span class="op">(</span><span class="va">neko_words</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">links</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 3 × 8</span></span>
+<span><span class="co">#&gt;   sentence_id word  position prev_id distance weight is_main referred</span></span>
+<span><span class="co">#&gt;         &lt;int&gt; &lt;chr&gt;    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt; &lt;lgl&gt;      &lt;int&gt;</span></span>
+<span><span class="co">#&gt; 1           1 &lt;NA&gt;        NA      NA       NA     NA TRUE           1</span></span>
+<span><span class="co">#&gt; 2           2 &lt;NA&gt;        NA      NA       NA     NA TRUE           1</span></span>
+<span><span class="co">#&gt; 3           3 &lt;NA&gt;        NA      NA       NA     NA TRUE           1</span></span>
+<span></span>
+<span><span class="co"># どこともつながらない文 (デッドコード)</span></span>
+<span><span class="va">sentences</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>sentence_id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">148</span>, paragraph_id <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="reference/dead_code.html">dead_code</a></span><span class="op">(</span><span class="va">links</span>, <span class="va">sentences</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 3 × 4</span></span>
+<span><span class="co">#&gt;   sentence_id paragraph_id component isolated</span></span>
+<span><span class="co">#&gt;         &lt;int&gt;        &lt;int&gt;     &lt;int&gt; &lt;lgl&gt;   </span></span>
+<span><span class="co">#&gt; 1           1            1         1 FALSE   </span></span>
+<span><span class="co">#&gt; 2           2            1         1 FALSE   </span></span>
+<span><span class="co">#&gt; 3           3            1         1 FALSE</span></span></code></pre></div>
+</div>
 <div class="section level2">
 <h2 id="設計の方針">設計の方針<a class="anchor" aria-label="anchor" href="#%E8%A8%AD%E8%A8%88%E3%81%AE%E6%96%B9%E9%87%9D"></a>
 </h2>
@@ -63,13 +139,6 @@
 <li>形態素解析は <a href="https://github.com/matutosi/moranajp" class="external-link">moranajp</a> に任せ， ローカルで実行します．ネットワークには依存しません．</li>
 <li>当面は日本語のみを対象とします．</li>
 </ul>
-</div>
-<div class="section level2">
-<h2 id="installation-インストール">Installation, インストール<a class="anchor" aria-label="anchor" href="#installation-%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB"></a>
-</h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span><span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://remotes.r-lib.org" class="external-link">"remotes"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"matutosi/sujimichi"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="citation-引用">Citation, 引用<a class="anchor" aria-label="anchor" href="#citation-%E5%BC%95%E7%94%A8"></a>
